@@ -43,8 +43,17 @@ Quick Quizzes. GitHub Pages serves `main`.
 - `node verify/retake.mjs` drives the retake end to end, including a
   45-question Full Practice Exam. `--plant` runs 7 plants.
 
-## Known, not yet fixed
+## Contrast (fixed 30 September 2026)
 
-The grey `--muted` text (#5b7186 on the light background) measures about
-4.6:1, under the 7:1 floor, and it is used widely. New text avoids it. The fix
-is a colour change, so it needs a preview for the owner first.
+Every student-facing screen meets AAA on painted pixels. The owner approved
+the before/after preview: "I like all of the changes in all of the quizzes".
+- The approved colours are in a block marked "AAA contrast" (`<style id="aaa-contrast">` at the end of the head in `index.html`).
+- Colour changes stay in the royal palette, with no new hues.
+- Disabled buttons are no longer faded out. They're solid silver with a dashed
+  border and readable text.
+- `node verify/contrast.mjs` drives every screen (dashboard, setup, question
+  before and after answering, results, paused-quiz banner) and fails on
+  anything under 7:1 (4.5:1 for large text). `--plant` puts back the old
+  sky-blue buttons and must fail.
+
+Run it after any colour or layout change.
