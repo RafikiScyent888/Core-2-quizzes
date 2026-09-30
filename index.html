@@ -45,7 +45,9 @@ h2{margin:0 0 12px 0;font-size:18px}
 }
 button{
   background:var(--sky);
-  color:#04324a;
+  /* Was #04324a, which measured about 6:1 on the sky blue, under the 7:1
+     AAA floor. (30 September 2026) */
+  color:#01131d;
   border:0;
   padding:11px 18px;
   border-radius:10px;
@@ -122,6 +124,11 @@ a.backlink:hover{text-decoration:underline}
 .count-row input[type=range]::-webkit-slider-runnable-track{height:8px;background:#e2f3fd;border-radius:999px}
 .count-row input[type=range]::-moz-range-track{height:8px;background:#e2f3fd;border-radius:999px}
 .note{color:var(--muted);font-size:13px;margin-top:6px}
+/* Retake rounds: a banner on each question, so a student always knows they
+   are working through their own misses. Main text colour, not --muted. */
+.retake-banner{border:1px solid var(--sky-deep);background:var(--card);border-radius:10px;padding:10px 14px;margin-bottom:14px;color:var(--text);font-size:14px}
+.retake-note{color:var(--text);font-size:13px;margin-top:8px}
+.results-actions button.ghost{color:var(--text)}
 
 /* ---- Quiz ---- */
 .progress{height:9px;background:#e2f3fd;border-radius:999px;overflow:hidden;margin:14px 0}
@@ -13058,6 +13065,25 @@ function renderSetup(){
   draw();
 }
 
+// Retake: a new round made only of the questions missed last round (wrong
+// or unanswered), reshuffled, answer positions reshuffled too. Rounds repeat
+// until nothing is left to retake.
+function startRetake(prev, ids){
+  const order = shuffle(ids).map(id => ({ id: id, displayOrder: shuffle([0,1,2,3]) }));
+  const session = {
+    v: 1,
+    domains: prev.domains,
+    order: order,
+    answers: order.map(() => null),
+    current: 0,
+    finished: false,
+    round: (prev.round || 1) + 1,
+    startedAt: new Date().toISOString()
+  };
+  saveSession(session);
+  renderQuiz(session);
+}
+
 function startQuiz(selectedSubs, count){
   const pool = shuffle(poolForSubs(selectedSubs)).slice(0, count);
   const order = pool.map(q => ({ id: q.id, displayOrder: shuffle([0,1,2,3]) }));
@@ -13087,6 +13113,7 @@ function renderQuiz(session){
 
   app.innerHTML = `
     <h1>CompTIA A+ Core 2 Practice Exam</h1>
+    ${(session.round || 1) > 1 ? `<div class="retake-banner" role="note"><strong>Retake round ${session.round - 1}</strong> &mdash; only the questions you missed last time.</div>` : ''}
     <div class="qmeta">
       <span>Question ${idx+1} of ${total} &middot; ${q.sub} ${SUB_LABEL[q.sub] || q.domain}</span>
       <span>${answeredCount} answered</span>
@@ -13198,9 +13225,12 @@ function renderResults(session){
   const answeredCount = session.answers.filter(a=>a!==null).length;
   const score = answeredCount > 0 ? Math.round((correctCount / answeredCount) * 100) : 0;
 
+  const round = session.round || 1;
+  const missedIds = missed.map(m => m.q.id);
   app.innerHTML = `
     <a class="backlink" id="backToDash">&larr; Back to dashboard</a>
-    <h1>Results</h1>
+    <h1>Results${round > 1 ? ` &mdash; retake round ${round - 1}` : ''}</h1>
+    ${round > 1 && missed.length === 0 ? `<div class="retake-banner" role="status"><strong>Every one right.</strong> You have now answered every question you missed on your original quiz correctly.</div>` : ''}
     <div class="card" style="text-align:center">
       <div class="score-big">${score}<span style="font-size:24px;color:var(--muted)"> / 100</span></div>
       <div class="score-sub">${correctCount} correct out of ${answeredCount} answered (${total} selected)</div>
@@ -13213,9 +13243,11 @@ function renderResults(session){
       <h2>Review missed questions (${missed.length})</h2>
       <div id="missedList">${missed.length===0 ? '<div class="note">Perfect score on answered questions.</div>' : ''}</div>
     </div>
-    <div class="row">
-      <button id="newQuizBtn">Start New Quiz</button>
+    <div class="row results-actions">
+      ${missed.length ? `<button id="retakeBtn">Retake the ${missed.length} I missed</button>` : ''}
+      <button id="newQuizBtn" ${missed.length ? 'class="ghost"' : ''}>Start New Quiz</button>
     </div>
+    ${missed.length ? `<div class="retake-note">Retake gives you only the questions you got wrong or didn&rsquo;t answer, in a new order. You can keep retaking until you&rsquo;ve got every one right.</div>` : ''}
   `;
   document.getElementById('backToDash').addEventListener('click', () => { clearSession(); renderDashboard(); });
 
@@ -13254,6 +13286,8 @@ function renderResults(session){
     clearSession();
     renderDashboard();
   });
+  const retakeBtn = document.getElementById('retakeBtn');
+  if(retakeBtn) retakeBtn.addEventListener('click', () => startRetake(session, missedIds));
 }
 
 renderDashboard();
