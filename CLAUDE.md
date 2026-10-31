@@ -65,6 +65,46 @@ the same day. Still open: the CertMaster Learn address students use.
 - Reset, leaving a quiz part-way, and finishing with questions left all ask
   first. Answers can be chosen with the keyboard.
 
+## Light or dark (31 October 2026)
+
+The owner asked for a dark/light switch on every test bank ("we need to keep
+things easy for my students to read"). Core 1 was previewed first; the owner
+approved it and said of the other four: "Push it and do the rest". Decided by
+the owner before building:
+- **One choice for the whole program:** the key is `cwp:theme` ("light" or
+  "dark"), the same key the acronym sites use, so a choice made there holds
+  here. Nothing is saved until the student presses the button.
+- **Until the student chooses, the page follows the device** (only Core 1
+  starts dark), and keeps following if the device changes while it is open.
+  Once chosen, the choice wins over the device.
+
+How it works:
+- A script in the head stamps `data-theme` on `<html>` before the page
+  paints, so it never flashes.
+- `#themeBtn` sits beside Easier reading and names where it goes ("Dark mode"
+  on the light page), with a moon or sun; its label says both ("Switch to dark
+  mode. Currently light mode."), as on the acronym sites.
+- **Dark mode** is one block, `<style id="dark-theme">`, every rule under
+  `:root[data-theme="dark"]`: the program's dark look, as on Core 1 (light
+  lettering on deep navy, cyan buttons with dark lettering, a yellow focus
+  ring, a dark banner on the dashboard).
+- **Topic colours in dark mode:** `TOPIC_BRIGHT`, a bright shade of each
+  topic's own hue, dark lettering over 7:1, neighbours alternating in
+  lightness. `tc(id)` carries both (`--tc` deep, `--tcb` bright).
+- **Light mode is unchanged**, apart from the gradient fix below.
+
+## AAA on gradients (fixed 31 October 2026)
+
+The contrast check only took a background colour that covered 8% of a text's
+box, so on a gradient it found none and passed the text unmeasured. Fixed in
+`verify/contrast.mjs`: the darkest and lightest parts of a gradient are now
+measured too. It found real failures, in `<style id="aaa-gradients">` now:
+- white on the bright tiles was 2.4:1 (green), 3.0:1 (orange) and 3.5:1
+  (purple): the tiles are now deep purple, deep red and deep green, same
+  hues, white lettering over 7:1
+- the dashboard banner's subtitle was 2.8:1 where the sky deepened: the
+  banner is a lighter sky with navy lettering
+
 ## Checks: `verify/` (needs Playwright; not needed to run the site)
 
 - `node verify/objectives.mjs` checks the bank against
@@ -73,8 +113,11 @@ the same day. Still open: the CertMaster Learn address students use.
 - `node verify/retake.mjs` drives the retake end to end, including a
   45-question Full Practice Exam. `--plant` runs 7 plants.
 - `node verify/scorecard.mjs` drives the score card, map, chips, parts bar,
-  Missed list, Reset, the prompts, Shuffle order, review and Easier reading.
-  `--plant` runs 23 plants.
+  Missed list, Reset, the prompts, Shuffle order, review, Easier reading and
+  light or dark (follows a light and a dark device, live, until chosen;
+  nothing saved until then; the button's words; `cwp:theme`; a choice from
+  another site; the choice beats the device; the bright shades).
+  `--plant` runs 32 plants.
 
 ## Contrast (fixed 30 September 2026)
 
@@ -90,5 +133,11 @@ the before/after preview: "I like all of the changes in all of the quizzes".
   screen, and a phone) and fails on
   anything under 7:1 (4.5:1 for large text). `--plant` puts back the old
   sky-blue buttons and must fail.
+- Since 31 October it drives every screen twice, dark then light, each in a
+  fresh browser, fails if a sweep finds the page in the other theme, and
+  measures text on gradients (above). `--theme=dark` runs one. Calibrated
+  with plants: faint dark-only text, an unreadable dark chip, the dark banner
+  override removed, a bright tile put back, the theme setting ignored; all
+  were caught.
 
 Run it after any colour or layout change.

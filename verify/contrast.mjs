@@ -3,7 +3,14 @@
 // paused-quiz banner. Text is hidden, the page photographed, and each run of
 // text compared with the real pixels behind it: 7:1, or 4.5:1 for large text
 // (24px, or 18.66px bold). Emoji are skipped; they draw in their own colours.
+// On a gradient, where no one colour covers the text's box, the darkest and
+// lightest parts of the background are measured too (fixed 31 October 2026:
+// before that, text on a gradient went unmeasured and passed).
+// Since 31 October 2026 every screen is driven twice: once dark and once light
+// (the student's choice, kept under "cwp:theme"), each in a fresh browser, and
+// every sweep confirms the page really is in the theme it is measuring.
 //   node verify/contrast.mjs            exit 1 if anything is under the floor
+//   node verify/contrast.mjs --theme=light   one theme only (dark or light)
 //   node verify/contrast.mjs --plant    puts back the old failing button colour; must fail
 // Needs Playwright. Not needed to run the site.
 import fs from 'node:fs'; import path from 'node:path'; import http from 'node:http';
@@ -20,10 +27,19 @@ const srv = http.createServer((q, r) => { const f = path.join(dir, decodeURIComp
 const U = `http://127.0.0.1:${srv.address().port}`;
 const pw = await import('/opt/node22/lib/node_modules/playwright/index.mjs'); const { chromium } = pw.default || pw;
 const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome', args: ['--headless=new', '--no-sandbox'] });
-const page = await browser.newPage({ viewport: { width: 1100, height: 900 } });
-page.setDefaultTimeout(6000);
-page.on('dialog', d => d.accept());
-if (extraCss) await page.addInitScript(css => { document.addEventListener('DOMContentLoaded', () => { const s = document.createElement('style'); s.id = 'aaa-preview'; s.textContent = css; document.head.appendChild(s); }); }, extraCss);
+const THEMES = ((process.argv.find(a => a.startsWith('--theme=')) || '').slice(8) || 'dark,light').split(',');
+let page, THEME;
+const wrongTheme = [];
+async function openPage(theme) {
+  const ctx = await browser.newContext({ viewport: { width: 1100, height: 900 } });
+  page = await ctx.newPage();
+  page.setDefaultTimeout(6000);
+  page.on('dialog', d => d.accept());
+  // the student's choice, put back before every load (the drivers clear storage between screens)
+  await page.addInitScript(t => { try { if (t === 'light' || t === 'dark') localStorage.setItem('cwp:theme', t); } catch (e) {} }, theme === 'default' ? null : theme);
+  if (extraCss) await page.addInitScript(css => { document.addEventListener('DOMContentLoaded', () => { const s = document.createElement('style'); s.id = 'aaa-preview'; s.textContent = css; document.head.appendChild(s); }); }, extraCss);
+  return ctx;
+}
 
 const lum = c => { const f = v => (v /= 255) <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; return 0.2126 * f(c[0]) + 0.7152 * f(c[1]) + 0.0722 * f(c[2]); };
 const ratio = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); };
@@ -33,6 +49,9 @@ const found = new Map();
 // (for a modal dialog, which sits over a dimmed page in the viewport's centre).
 async function sweep(state, opt = {}) {
   const full = opt.full !== false;
+  state = THEME + ':' + state;
+  const shown = await page.evaluate(() => document.documentElement.getAttribute('data-theme'));
+  if (shown !== THEME) wrongTheme.push(`${state} is showing ${shown}`);
   await page.waitForTimeout(350);
   const runs = await page.evaluate(({ root, full }) => {
     const out = []; const w = document.createTreeWalker(root ? document.querySelector(root) : document.body, NodeFilter.SHOW_TEXT); let n;
@@ -60,7 +79,18 @@ async function sweep(state, opt = {}) {
     return runs.map(r => { const w = Math.max(1, Math.round(r.w - 4)), h = Math.max(1, Math.round(r.h - 4));
       const d = x.getImageData(Math.round(r.x + 2), Math.round(r.y + 2), w, h).data, cnt = {}; let tot = 0;
       for (let i = 0; i < d.length; i += 4) { const k = d[i] + ',' + d[i + 1] + ',' + d[i + 2]; cnt[k] = (cnt[k] || 0) + 1; tot++; }
-      return Object.entries(cnt).filter(([, v]) => v / tot >= 0.08).map(([k]) => k.split(',').map(Number)); });
+      const major = Object.entries(cnt).filter(([, v]) => v / tot >= 0.08);
+      const out = major.map(([k]) => k.split(',').map(Number));
+      // A gradient (31 October 2026): no one colour covers the box, so the
+      // colours above found little or nothing and the text went unmeasured.
+      // Measure the background's darkest and lightest parts as well.
+      if (major.reduce((a, [, v]) => a + v, 0) / tot < 0.6) {
+        const px = []; for (let i = 0; i < d.length; i += 4) px.push([d[i], d[i + 1], d[i + 2]]);
+        const L = c => 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+        px.sort((a, b) => L(a) - L(b));
+        out.push(px[Math.floor((px.length - 1) * 0.05)], px[Math.floor((px.length - 1) * 0.95)]);
+      }
+      return out; });
   }, { b64: png.toString('base64'), runs });
   runs.forEach((r, i) => {
     const m = r.c.match(/[\d.]+/g).map(Number); const a = (m[3] ?? 1) * r.op;
@@ -170,10 +200,18 @@ async function coreNew(correctPos) {
   await page.setViewportSize({ width: 1100, height: 900 });
 }
 
-try { await ({ nq, cysa, core })[site](); } catch (e) { console.log('DRIVE ERROR: ' + String(e.message).split('\n')[0]); }
+let driveErr = 0;
+for (const t of THEMES) {
+  THEME = t;
+  const ctx = await openPage(t);
+  try { await ({ nq, cysa, core })[site](); } catch (e) { driveErr++; console.log(`DRIVE ERROR (${t}): ` + String(e.message).split('\n')[0]); }
+  await ctx.close();
+}
 await browser.close(); srv.close();
+for (const w of wrongTheme) console.log('WRONG THEME: ' + w);
 const list = [...found.values()].sort((a, b) => a.worst - b.worst);
 for (const e of list) console.log(`${e.worst.toFixed(2)}:1 < ${e.need}${e.disabled ? ' [disabled]' : ''}  ${e.key}  "${e.sample}"  [${[...e.states].join(', ')}]`);
-console.log(list.length ? `${list.length} colour pairs under the floor` : 'PASS — every text run meets AAA on painted pixels');
+const bad = list.length + wrongTheme.length + driveErr;
+console.log(list.length ? `${list.length} colour pairs under the floor` : wrongTheme.length || driveErr ? 'FAIL — a screen was not measured in its theme' : `PASS — every text run meets AAA on painted pixels (${THEMES.join(' and ')})`);
 if (PLANT) { console.log(list.length ? 'CAUGHT old sky-blue buttons: ' + list.length + ' pairs under the floor' : 'MISSED — the planted low-contrast buttons got through'); process.exit(list.length ? 0 : 1); }
-process.exit(list.length ? 1 : 0);
+process.exit(bad ? 1 : 0);

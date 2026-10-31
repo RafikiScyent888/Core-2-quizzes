@@ -7,6 +7,12 @@
 <script>
 /* Easier reading: on stays on, across pages, visits and the program's test banks. Set before the page paints, so it never flickers. */
 try{ if(localStorage.getItem("cwp-easier-reading") === "1") document.documentElement.classList.add("easier"); }catch(e){}
+/* Light or dark: the student's own choice, one for the whole program (the acronym sites
+   keep it under the same key). Until they choose, the page follows the device's setting.
+   Set here, before the page paints, so it never flashes. */
+(function(){ var t = null; try{ t = localStorage.getItem("cwp:theme"); }catch(e){}
+  if(t !== "light" && t !== "dark") t = (window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches) ? "dark" : "light";
+  document.documentElement.setAttribute("data-theme", t); })();
 </script>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>%E2%9A%A1</text></svg>" />
 <style>
@@ -174,6 +180,18 @@ button.danger { color: #991b1b; border-color: #991b1b; }
 .tile.sun .tsub { opacity: 1; }
 button:disabled { opacity: 1; background: #e2e8f0; color: #334155; border: 2px dashed #64748b; }
 </style>
+<style id="aaa-gradients">
+/* AAA on gradients (fixed 31 October 2026). The contrast check never measured
+   text on a gradient, so these passed unmeasured: white on the bright tiles was
+   2.4 to 3.5:1, and the banner's subtitle 2.8:1 where the sky deepened. Same
+   hues, deeper (tiles) or lighter (banner); every one now over 7:1. Both modes. */
+.tile.lightning{background:linear-gradient(135deg,#6141a9,#4c1d95)}
+.tile.fire{background:linear-gradient(135deg,#ae0019,#8a030a)}
+.tile.green{background:linear-gradient(135deg,#046244,#014c34)}
+.tile .tsub{opacity:1}
+.hero{background:linear-gradient(135deg,#e0f2fe,#bae6fd 55%,#7dd3fc)}
+.hero .sub{color:#04324a}
+</style>
 <style id="test-bank">
 /* Score card, question map, filters and the Missed list (31 October 2026).
    Topic colours are the owner's rainbow in deep shades for this light page
@@ -183,7 +201,9 @@ button:disabled { opacity: 1; background: #e2e8f0; color: #334155; border: 2px d
 :focus-visible{outline:3px solid #6d28d9;outline-offset:2px}
 button{min-height:44px}
 .sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
-.topline{max-width:960px;margin:0 auto;padding:14px 20px 0;display:flex;justify-content:flex-end}
+.topline{max-width:960px;margin:0 auto;padding:14px 20px 0;display:flex;flex-wrap:wrap;justify-content:flex-end;gap:10px}
+#themeBtn{display:inline-flex;align-items:center;gap:8px}
+#themeBtn svg{width:18px;height:18px;flex:none}
 body:has(#app.wide) .topline{max-width:1240px}
 .topline + .wrap{padding-top:14px}
 .wrap.wide{max-width:1240px}
@@ -262,9 +282,58 @@ html.easier .sub,html.easier .note,html.easier .retake-note,html.easier .intro,h
 html.easier .disclaimer{font-size:14px;text-align:left}
 html.easier button.qtile,html.easier button.seg{letter-spacing:0;word-spacing:0}
 </style>
+<style id="dark-theme">
+/* Dark mode (31 October 2026): the student's choice, kept for the whole program.
+   The program's dark look (as Core 1): light lettering on deep navy, cyan buttons
+   with dark lettering, a yellow focus ring; each topic in a bright shade of its own
+   hue (TOPIC_BRIGHT, --tcb) with dark lettering. Light mode is unchanged. */
+:root[data-theme="dark"]{--sky:#06b6d4;--sky-dark:#0891b2;--sky-deep:#7dd3fc;--bg:#071021;--card:#0b1426;--text:#e6eef6;--muted:#cbd5e1;--good:#4ade80;--good-bg:rgba(22,163,74,.16);--bad:#fca5a5;--bad-bg:rgba(239,68,68,.14);--border:rgba(255,255,255,.16);--accent2:#7c3aed;color-scheme:dark}
+:root[data-theme="dark"] body{background:linear-gradient(180deg,#04111a 0%,#071021 100%)}
+:root[data-theme="dark"] .card,:root[data-theme="dark"] .side-col,:root[data-theme="dark"] .qmap{box-shadow:0 8px 32px rgba(2,6,23,.6)}
+:root[data-theme="dark"] button:not(.tile){color:#011417}
+:root[data-theme="dark"] button.ghost{background:transparent;color:var(--muted);border:1px solid #64748b}
+:root[data-theme="dark"] button.ghost:hover{color:#fff;border-color:var(--sky)}
+:root[data-theme="dark"] button.danger{background:transparent;color:#fca5a5;border-color:#fca5a5}
+:root[data-theme="dark"] button:disabled{background:#1e293b;color:#cbd5e1;border:2px dashed #64748b}
+:root[data-theme="dark"] .results-actions button.ghost{color:var(--text)}
+:root[data-theme="dark"] .hero{background:linear-gradient(135deg,#0c3550,#0b1426 70%);color:var(--text);box-shadow:0 14px 34px rgba(2,6,23,.6);border:1px solid var(--border)}
+:root[data-theme="dark"] .hero h1{color:#7dd3fc}
+:root[data-theme="dark"] .hero .sub{color:#cbd5e1}
+:root[data-theme="dark"] .resume-banner{background:rgba(124,58,237,.14);border-color:rgba(167,139,250,.5)}
+:root[data-theme="dark"] .domain-group h3,:root[data-theme="dark"] a.backlink,:root[data-theme="dark"] .pill{color:#bae6fd}
+:root[data-theme="dark"] .domain-item,:root[data-theme="dark"] .choice,:root[data-theme="dark"] .count-row input[type=number]{background:#071022;color:var(--text)}
+:root[data-theme="dark"] .count-row input[type=range]::-webkit-slider-runnable-track{background:#1e293b}
+:root[data-theme="dark"] .count-row input[type=range]::-moz-range-track{background:#1e293b}
+:root[data-theme="dark"] .progress{background:rgba(255,255,255,.08)}
+:root[data-theme="dark"] .tag.good{background:rgba(22,163,74,.2);color:#86efac}
+:root[data-theme="dark"] .tag.bad{background:rgba(239,68,68,.2);color:#fecaca}
+:root[data-theme="dark"] .explain-box{color:var(--muted)}
+:root[data-theme="dark"] :focus-visible{outline-color:#fde047}
+:root[data-theme="dark"] .dot{background:var(--tcb);box-shadow:0 0 0 2px #071021,0 0 0 3px rgba(255,255,255,.35)}
+:root[data-theme="dark"] .sc-bar{background:#1e293b;background:color-mix(in srgb,var(--tcb) 28%,#0b1426);box-shadow:inset 0 0 0 1px var(--tcb)}
+:root[data-theme="dark"] .sc-fill{background:var(--tcb)}
+:root[data-theme="dark"] button.linkish,:root[data-theme="dark"] a.linkish{color:#bae6fd;background:none}
+:root[data-theme="dark"] button.linkish:hover,:root[data-theme="dark"] a.linkish:hover{color:#fff}
+:root[data-theme="dark"] button.seg{background:var(--tcb);color:#071021}
+:root[data-theme="dark"] button.seg[aria-pressed="true"]{outline-color:#fff}
+:root[data-theme="dark"] button.seg:hover{box-shadow:inset 0 0 0 2px #071021}
+:root[data-theme="dark"] button.chip{background:#071022;color:var(--text);border-color:#64748b}
+:root[data-theme="dark"] button.chip.on{background:#e6eef6;color:#071021;border-color:#fff}
+:root[data-theme="dark"] button.qtile{background:#071022;color:var(--text);border-color:var(--tcb)}
+:root[data-theme="dark"] button.qtile.st-right{background:#14532d;color:#fff}
+:root[data-theme="dark"] button.qtile.st-wrong{background:#5b1a1a;color:#fff}
+:root[data-theme="dark"] button.qtile.cur{outline-color:#fff}
+:root[data-theme="dark"] button.qtile.cur:focus-visible{outline-color:#fde047}
+:root[data-theme="dark"] .kbox{background:#071022;color:#fff;border-color:#cbd5e1}
+:root[data-theme="dark"] .kbox.k-right{background:#14532d}
+:root[data-theme="dark"] .kbox.k-wrong{background:#5b1a1a}
+:root[data-theme="dark"] .kbox.k-cur{outline-color:#fff}
+:root[data-theme="dark"] dialog.confirm{background:#0b1220;color:var(--text);border-color:#cbd5e1}
+:root[data-theme="dark"] dialog.confirm::backdrop{background:rgba(2,6,23,.8)}
+</style>
 </head>
 <body>
-<div class="topline"><button type="button" class="ghost" id="easierBtn" aria-pressed="false">Easier reading: off</button></div>
+<div class="topline"><button type="button" class="ghost" id="themeBtn">Dark mode</button><button type="button" class="ghost" id="easierBtn" aria-pressed="false">Easier reading: off</button></div>
 <div class="wrap" id="app"></div>
 <dialog id="confirmDlg" class="confirm" aria-labelledby="confirmTitle" aria-describedby="confirmBody">
   <h2 id="confirmTitle"></h2>
@@ -13207,6 +13276,16 @@ const TOPIC_COLOR = {
   "3.1": "#064e3f", "3.2": "#166069", "3.3": "#0b4768",
   "4.1": "#3d4daa", "4.2": "#552381", "4.3": "#892e75",
 };
+// The same hues, bright, for the dark page (31 October 2026): dark lettering on
+// every one is over 7:1, and neighbours alternate in lightness so they stay apart.
+const TOPIC_BRIGHT = {
+  "1.1": "#f97e95", "1.2": "#ffb597", "1.3": "#d19a45",
+  "2.1": "#ccca69", "2.2": "#75b36b",
+  "3.1": "#5fdaba", "3.2": "#0ab5c6", "3.3": "#85cdfe",
+  "4.1": "#879ffe", "4.2": "#d7b8ff", "4.3": "#e583cb",
+};
+// Light or dark: one choice for the whole program, shared with the acronym sites.
+const THEME_KEY = "cwp:theme";
 // Questions written for the updated objectives (30 September 2026).
 const NEW_SOURCE = "Added 30 Sept 2026";
 const NEW_CHIP = "New for the updated objectives";
@@ -13263,7 +13342,7 @@ function questionById(id){
   return BY_ID.get(String(id));
 }
 function isNew(q){ return typeof q.source === 'string' && q.source.indexOf(NEW_SOURCE) === 0; }
-function tc(id){ return `--tc:${TOPIC_COLOR[id] || '#cbd5e1'}`; }
+function tc(id){ return `--tc:${TOPIC_COLOR[id] || '#334155'};--tcb:${TOPIC_BRIGHT[id] || '#cbd5e1'}`; }
 function dot(id){ return `<span class="dot" style="${tc(id)}" aria-hidden="true"></span>`; }
 function topicText(id){ return `${id} ${escapeHtml(SUB_LABEL[id] || '')}`; }
 
@@ -14039,6 +14118,34 @@ function escapeHtml(s){
     paint();
     fitParts();
   });
+  paint();
+})();
+
+// ---------- Light or dark: the student's choice, kept for the whole program ----------
+// Nothing is saved until the button is pressed; until then the page follows the
+// device, even if its setting changes while the page is open. The button names
+// where it goes ("Dark mode" on the light page), as on the acronym sites.
+(function(){
+  const b = document.getElementById('themeBtn'), root = document.documentElement;
+  const SUN = '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4.5"/><path d="M12 1.5v3M12 19.5v3M1.5 12h3M19.5 12h3M4.6 4.6l2.1 2.1M17.3 17.3l2.1 2.1M4.6 19.4l2.1-2.1M17.3 6.7l2.1-2.1"/></svg>';
+  const MOON = '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M20.5 14.5A8.5 8.5 0 0 1 9.5 3.5a8.5 8.5 0 1 0 11 11z"/></svg>';
+  const now = () => root.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+  const chosen = () => { try{ const v = localStorage.getItem(THEME_KEY); return v === 'light' || v === 'dark' ? v : null; }catch(e){ return null; } };
+  function paint(){
+    const next = now() === 'dark' ? 'light' : 'dark';
+    b.innerHTML = (next === 'light' ? SUN : MOON) + '<span>' + (next === 'light' ? 'Light mode' : 'Dark mode') + '</span>';
+    const say = 'Switch to ' + next + ' mode. Currently ' + now() + ' mode.';
+    b.setAttribute('aria-label', say); b.title = say;
+  }
+  b.addEventListener('click', () => {
+    const next = now() === 'dark' ? 'light' : 'dark';
+    root.setAttribute('data-theme', next);
+    try{ localStorage.setItem(THEME_KEY, next); }catch(e){}
+    paint();
+  });
+  const mq = window.matchMedia ? matchMedia('(prefers-color-scheme: dark)') : null;
+  const follow = e => { if(chosen()) return; root.setAttribute('data-theme', e.matches ? 'dark' : 'light'); paint(); };
+  if(mq){ if(mq.addEventListener) mq.addEventListener('change', follow); else if(mq.addListener) mq.addListener(follow); }
   paint();
 })();
 

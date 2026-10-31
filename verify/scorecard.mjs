@@ -23,6 +23,12 @@
 //     remembered across visits; switching part-way keeps every answer
 //   - review from the results: a square opens that question, locked
 //   - Easier reading stays on across a reload
+//   - light or dark (31 October 2026): with nothing chosen the page follows the
+//     device, even when its setting changes while the page is open; nothing is
+//     saved until the button is pressed; the button names where it goes and
+//     saves the choice under the program's key "cwp:theme", which then wins over
+//     the device; a choice made on another site is honoured; in dark mode every
+//     topic is its bright shade, dark lettering over 7:1
 //   - answers can be chosen from the keyboard; no script errors
 //   node verify/scorecard.mjs [file]    file defaults to index.html
 //   node verify/scorecard.mjs --plant   proves each check can fail
@@ -43,6 +49,7 @@ const ratio = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x, y) +
 const hexRgb = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
 const cssRgb = s => (s.match(/\d+/g) || []).slice(0, 3).map(Number);
 const INK = [255, 255, 255];   // white lettering on the deep topic colours
+const DARK_INK = [7, 16, 33], THEME = 'cwp:theme';   // dark lettering on the bright shades (dark mode)
 
 async function run(file) {
   const dir = path.dirname(path.resolve(file)), base = path.basename(file);
@@ -265,6 +272,54 @@ async function run(file) {
     ok(await page.evaluate(() => parseFloat(getComputedStyle(document.body).letterSpacing) > 0), 'Easier reading does not widen the letter spacing');
     await page.click('#easierBtn'); await page.reload();
     ok(!(await page.evaluate(() => document.documentElement.classList.contains('easier'))), 'Easier reading cannot be turned off');
+
+    // light or dark
+    const theme = () => page.evaluate(() => document.documentElement.getAttribute('data-theme'));
+    const saved = () => page.evaluate(k => localStorage.getItem(k), THEME);
+    const btn = () => page.$eval('#themeBtn', b => [b.textContent.replace(/\s+/g, ' ').trim(), b.getAttribute('aria-label')]).catch(() => []);
+    const bodyBg = () => page.evaluate(() => getComputedStyle(document.body).backgroundImage);
+    await page.evaluate(k => localStorage.removeItem(k), THEME); await page.reload();
+    ok((await theme()) === 'light', `on a light device with nothing chosen the page starts ${await theme()}, not light`);
+    ok((await saved()) === null, `a theme (${await saved()}) is saved before the student chooses one`);
+    let b1 = await btn();
+    ok(b1[0] === 'Dark mode' && b1[1] === 'Switch to dark mode. Currently light mode.', `on the light page the theme button reads ${JSON.stringify(b1)}`);
+    const lightBg = await bodyBg();
+    await page.click('#themeBtn');
+    ok((await theme()) === 'dark', 'the theme button does not switch to dark');
+    ok((await saved()) === 'dark', `the dark choice is saved as ${await saved()}, not under the program's key`);
+    ok((await bodyBg()) !== lightBg, 'dark mode does not repaint the page');
+    b1 = await btn();
+    ok(b1[0] === 'Light mode' && b1[1] === 'Switch to light mode. Currently dark mode.', `on the dark page the theme button reads ${JSON.stringify(b1)}`);
+    await page.reload();
+    ok((await theme()) === 'dark', 'dark mode is forgotten on reload');
+    const SH = await page.evaluate(() => typeof TOPIC_BRIGHT === 'object' ? TOPIC_BRIGHT : {});
+    ok(subs.every(id => /^#[0-9a-f]{6}$/i.test(SH[id] || '')), 'a topic has no bright shade for the dark page');
+    ok(new Set(subs.map(id => (SH[id] || '').toLowerCase())).size === subs.length, 'two topics share a bright shade');
+    for (const id of subs) if (SH[id]) ok(ratio(hexRgb(SH[id]), DARK_INK) >= 7, `dark lettering on ${id}'s bright shade ${SH[id]} is ${ratio(hexRgb(SH[id]), DARK_INK).toFixed(2)}:1, under 7:1`);
+    await page.click('#fullExamTile');
+    const ddots = await page.$$eval('.domain-item', els => els.map(e => [e.querySelector('label').textContent.split(' ')[0], getComputedStyle(e.querySelector('.dot')).backgroundColor]));
+    ok(ddots.length === subs.length, `in dark mode the setup shows ${ddots.length} topic colours`);
+    for (const [id, bg] of ddots) if (SH[id]) ok(cssRgb(bg).join() === hexRgb(SH[id]).join(), `in dark mode ${id} is painted ${bg}, not its bright shade ${SH[id]}`);
+    await page.click('#backToDash');
+    await page.click('#themeBtn'); await page.reload();
+    ok((await theme()) === 'light' && (await saved()) === 'light', 'switching back to light is not kept');
+    // the device: followed until the student chooses, live; then the choice wins
+    for (const scheme of ['light', 'dark']) {
+      const other = scheme === 'light' ? 'dark' : 'light';
+      const ctx = await browser.newContext({ colorScheme: scheme }); const p2 = await ctx.newPage();
+      const th2 = () => p2.evaluate(() => document.documentElement.getAttribute('data-theme'));
+      await p2.goto(URL); await p2.evaluate(() => localStorage.clear()); await p2.reload();
+      ok((await th2()) === scheme, `on a device set to ${scheme}, with nothing chosen, the page starts ${await th2()}`);
+      await p2.emulateMedia({ colorScheme: other }); await p2.waitForTimeout(100);
+      ok((await th2()) === other, `with nothing chosen, the device changing to ${other} leaves the page ${await th2()}`);
+      await p2.emulateMedia({ colorScheme: scheme });
+      await p2.evaluate(([k, v]) => localStorage.setItem(k, v), [THEME, other]); await p2.reload();
+      ok((await th2()) === other, `${other} chosen on another of the program's sites shows ${await th2()} here`);
+      // flip the device and back, a beat apart: two flips in one frame report no change at all
+      await p2.emulateMedia({ colorScheme: other }); await p2.waitForTimeout(150); await p2.emulateMedia({ colorScheme: scheme }); await p2.waitForTimeout(150);
+      ok((await th2()) === other, `the device changing overrode the student's choice of ${other}: the page is ${await th2()}`);
+      await ctx.close();
+    }
   } catch (e) { fails.push('could not drive the page — ' + String(e.message).split('\n')[0]); }
   ok(!errors.length, 'script errors: ' + errors.join(' | '));
   await browser.close(); srv.close();
@@ -297,6 +352,15 @@ if (process.argv.includes('--plant')) {
     'practise draws from every topic': ['const all = QUESTION_BANK.filter(q => q.sub === sub).map(q => q.id);', 'const all = QUESTION_BANK.map(q => q.id);'],
     'no keyboard answers': ["if(e.key === 'Enter' || e.key === ' ')", 'if(false)'],
     'easier reading forgotten': ["try{ localStorage.setItem(EASIER_KEY, on ? '1' : '0'); }catch(e){}", ''],
+    'theme ignores the device': ['t = (window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches) ? "dark" : "light";', 't = "light";'],
+    'theme saved before choosing': ['try{ t = localStorage.getItem("cwp:theme"); }catch(e){}', 'try{ t = localStorage.getItem("cwp:theme") || (localStorage.setItem("cwp:theme", "light"), "light"); }catch(e){}'],
+    'theme choice not saved': ['try{ localStorage.setItem(THEME_KEY, next); }catch(e){}', ''],
+    'theme saved on its own key': ['const THEME_KEY = "cwp:theme";', 'const THEME_KEY = "core2_theme";'],
+    'button names the theme it is in': ["(next === 'light' ? 'Light mode' : 'Dark mode')", "(next === 'light' ? 'Dark mode' : 'Light mode')"],
+    'device change not followed': ["if(mq){ if(mq.addEventListener) mq.addEventListener('change', follow); else if(mq.addListener) mq.addListener(follow); }", ''],
+    'device change beats a choice': ['const follow = e => { if(chosen()) return;', 'const follow = e => {'],
+    'a bright shade too dark for lettering': ['"4.1": "#879ffe"', '"4.1": "#4d5fc0"'],
+    'dark mode keeps the deep colours': [':root[data-theme="dark"] .dot{background:var(--tcb);', ':root[data-theme="dark"] .dot{background:var(--tc);'],
   };
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'scorecard-plant-'));
   let missedN = 0;
@@ -313,5 +377,5 @@ if (process.argv.includes('--plant')) {
 } else {
   const fails = await run(process.argv[2] || path.join(HERE, '..', 'index.html'));
   if (fails.length) { console.log('FAIL ' + fails.length); fails.forEach(f => console.log('  - ' + f)); process.exit(1); }
-  console.log('PASS — topic colours, parts bar, chips, map, score card, Missed list (Study these first, Retake all missed, Practise this topic), Reset, leave and finish prompts, Shuffle order, review, Easier reading, keyboard answers, no script errors');
+  console.log('PASS — topic colours, parts bar, chips, map, score card, Missed list (Study these first, Retake all missed, Practise this topic), Reset, leave and finish prompts, Shuffle order, review, Easier reading, light or dark (follows the device until chosen, the choice kept for the program), keyboard answers, no script errors');
 }
