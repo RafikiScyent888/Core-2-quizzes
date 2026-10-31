@@ -29,26 +29,30 @@ const lum = c => { const f = v => (v /= 255) <= 0.03928 ? v / 12.92 : ((v + 0.05
 const ratio = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); };
 const found = new Map();
 
-async function sweep(state) {
+// opt.root sweeps one element only; opt.full === false photographs the viewport
+// (for a modal dialog, which sits over a dimmed page in the viewport's centre).
+async function sweep(state, opt = {}) {
+  const full = opt.full !== false;
   await page.waitForTimeout(350);
-  const runs = await page.evaluate(() => {
-    const out = []; const w = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT); let n;
+  const runs = await page.evaluate(({ root, full }) => {
+    const out = []; const w = document.createTreeWalker(root ? document.querySelector(root) : document.body, NodeFilter.SHOW_TEXT); let n;
     const desc = el => { const p = []; for (let e = el; e && e !== document.body && p.length < 3; e = e.parentElement) p.unshift(e.tagName.toLowerCase() + (e.id ? '#' + e.id : '') + (typeof e.className === 'string' && e.className.trim() ? '.' + e.className.trim().split(/\s+/).join('.') : '')); return p.join(' > '); };
     while ((n = w.nextNode())) {
       if (!n.textContent.trim()) continue;
       if (/^[\p{Extended_Pictographic}\uFE0F\u200D\s]+$/u.test(n.textContent)) continue;  // emoji draw in their own colours
       const el = n.parentElement; if (el.closest('script,style,noscript')) continue;
       const cs = getComputedStyle(el); if (cs.visibility === 'hidden' || cs.display === 'none') continue;
+      { const br = el.getBoundingClientRect(); if (br.width <= 2 || br.height <= 2) continue; }  // screen-reader-only text: clipped to 1px, never painted
       let op = 1; for (let a = el; a; a = a.parentElement) op *= parseFloat(getComputedStyle(a).opacity);
       const disabled = !!el.closest(':disabled,[aria-disabled="true"]');
       const rg = document.createRange(); rg.selectNodeContents(n);
       for (const r of rg.getClientRects()) if (r.width > 4 && r.height > 6)
-        out.push({ t: n.textContent.trim().slice(0, 48), c: cs.color, op, s: parseFloat(cs.fontSize), b: parseInt(cs.fontWeight) >= 700, x: r.x + scrollX, y: r.y + scrollY, w: r.width, h: r.height, el: desc(el), disabled });
+        out.push({ t: n.textContent.trim().slice(0, 48), c: cs.color, op, s: parseFloat(cs.fontSize), b: parseInt(cs.fontWeight) >= 700, x: r.x + (full ? scrollX : 0), y: r.y + (full ? scrollY : 0), w: r.width, h: r.height, el: desc(el), disabled });
     }
     return out;
-  });
+  }, { root: opt.root || null, full });
   const tag = await page.addStyleTag({ content: '*{color:transparent!important;-webkit-text-fill-color:transparent!important;text-shadow:none!important;caret-color:transparent!important}' });
-  const png = await page.screenshot({ fullPage: true });
+  const png = await page.screenshot({ fullPage: full });
   await tag.evaluate(t => t.remove());
   const bgs = await page.evaluate(async ({ b64, runs }) => {
     const img = new Image(); img.src = 'data:image/png;base64,' + b64; await img.decode();
@@ -131,6 +135,37 @@ async function core() {
   await page.click('#newQuizBtn').catch(() => {}); await page.click('#quick10Tile');
   const pause = await page.$('#pauseBtn'); if (pause) { await pause.click(); await page.waitForTimeout(300); }
   await page.goto(`${U}/index.html`); await sweep('dashboard-resume');
+  if (await page.$('#easierBtn')) await coreNew(correctPos);
+}
+// The score card, map, chips, Missed list and Easier reading (31 October 2026):
+// a chip and a part chosen, the confirm dialog, every screen with Easier
+// reading on, and a phone.
+async function coreNew(correctPos) {
+  const S = () => page.evaluate(() => JSON.parse(localStorage.getItem(Object.keys(localStorage).find(k => /session/.test(k)))));
+  async function finish() {
+    for (let i = 0; i < 40; i++) {
+      const s = await S(); if (s.finished) return;
+      if (await page.evaluate(() => document.getElementById('confirmDlg').open)) { await page.click('#confirmNo'); continue; }
+      if (s.answers[s.current] === null) { const cp = await correctPos(); await page.locator('#choicesWrap .choice').nth(i % 3 ? cp : (cp + 1) % 4).click(); }
+      await page.click('#nextBtn');
+    }
+  }
+  await page.click('#resumeBtn');
+  const cp = await correctPos(); await page.locator('#choicesWrap .choice').nth((cp + 1) % 4).click();
+  await page.click('.chip[data-filter="missed"]'); await sweep('missed-chip-on');
+  await page.click('.seg'); await sweep('part-chosen');
+  await page.click('.chip[data-filter="all"]');
+  await page.click('#resetBtn'); await sweep('dialog', { root: '#confirmDlg', full: false }); await page.click('#confirmNo');
+  await page.click('#easierBtn'); await sweep('easier-question');
+  await finish(); await sweep('easier-results');
+  await page.click('.qtile[data-pos="0"]'); await sweep('easier-review');
+  await page.click('#backBtn'); await page.click('#newQuizBtn'); await sweep('easier-dashboard');
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.click('#quick10Tile'); const c2 = await correctPos(); await page.locator('#choicesWrap .choice').nth((c2 + 1) % 4).click();
+  await sweep('phone-easier-question');
+  await page.click('#easierBtn'); await sweep('phone-question');
+  await finish(); await sweep('phone-results');
+  await page.setViewportSize({ width: 1100, height: 900 });
 }
 
 try { await ({ nq, cysa, core })[site](); } catch (e) { console.log('DRIVE ERROR: ' + String(e.message).split('\n')[0]); }

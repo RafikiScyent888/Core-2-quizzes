@@ -35,6 +35,34 @@ Quick Quizzes. GitHub Pages serves `main`.
   11 new questions, `620`–`630`, reaching 20 plus the standing five extra
   scenarios.
 
+## Score card, question map and filters (31 October 2026, preview)
+
+Built to the owner's decisions in the doc "Test banks: score card, question
+map and filters (plan)" (https://claude.ai/artifact/6vcGwyvSsrwfHBWaKp6rq5),
+the same features the owner approved on Core 1, built on this page and its
+light look. It is on the branch `claude/student-resources-knowledge-base-vgvfni`
+and waits for the owner's approval before it goes to `main`.
+- **Topic colours:** `TOPIC_COLOR`, the owner's rainbow in deep shades, because
+  light colours vanish on this light page (previewed first, outside the royal
+  six). White lettering on each is over 7:1. A colour always goes with the
+  topic's number and name. The current question has a dark ring, not white.
+- **Dashboard:** "Study these first" and "Retake all missed" (when the Missed
+  list has anything on it), and Shuffle order under the tiles. The Full
+  Practice Exam screen has its own Shuffle order box (the same setting) and a
+  colour dot beside each topic.
+- **Quiz and results screens:** the parts bar, chips (All, each topic by
+  number, "New for the updated objectives" for questions 620-630, Missed),
+  the "Jump to any question" map, the score card, "Study these first", "Retake
+  all missed" and "Reset this quiz", as on Core 1. A square on the results map
+  opens that question for review.
+- **Keys:** `core2_missed_v1` (`{id: {n, at}}`; ids are numbers, stored as
+  text, looked up as text), `core2_shuffle_v1`, and `cwp-easier-reading`,
+  shared with the other test banks.
+- **CertMaster Learn:** `CERTMASTER_URL` is CompTIA's sign-in page
+  (learn.comptia.org/login) until the owner confirms the address students use.
+- Reset, leaving a quiz part-way, and finishing with questions left all ask
+  first. Answers can be chosen with the keyboard.
+
 ## Checks: `verify/` (needs Playwright; not needed to run the site)
 
 - `node verify/objectives.mjs` checks the bank against
@@ -42,6 +70,9 @@ Quick Quizzes. GitHub Pages serves `main`.
   Full Practice Exam setup. `--plant` runs 10 plants.
 - `node verify/retake.mjs` drives the retake end to end, including a
   45-question Full Practice Exam. `--plant` runs 7 plants.
+- `node verify/scorecard.mjs` drives the score card, map, chips, parts bar,
+  Missed list, Reset, the prompts, Shuffle order, review and Easier reading.
+  `--plant` runs 23 plants.
 
 ## Contrast (fixed 30 September 2026)
 
@@ -52,7 +83,9 @@ the before/after preview: "I like all of the changes in all of the quizzes".
 - Disabled buttons are no longer faded out. They're solid silver with a dashed
   border and readable text.
 - `node verify/contrast.mjs` drives every screen (dashboard, setup, question
-  before and after answering, results, paused-quiz banner) and fails on
+  before and after answering, results, paused-quiz banner; since 31 October
+  also a chip and a part chosen, the confirm dialog, Easier reading on every
+  screen, and a phone) and fails on
   anything under 7:1 (4.5:1 for large text). `--plant` puts back the old
   sky-blue buttons and must fail.
 

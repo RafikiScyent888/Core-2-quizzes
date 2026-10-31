@@ -4,6 +4,10 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>CompTIA A+ Core 2 Practice Exam</title>
+<script>
+/* Easier reading: on stays on, across pages, visits and the program's test banks. Set before the page paints, so it never flickers. */
+try{ if(localStorage.getItem("cwp-easier-reading") === "1") document.documentElement.classList.add("easier"); }catch(e){}
+</script>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>%E2%9A%A1</text></svg>" />
 <style>
 :root{
@@ -170,9 +174,100 @@ button.danger { color: #991b1b; border-color: #991b1b; }
 .tile.sun .tsub { opacity: 1; }
 button:disabled { opacity: 1; background: #e2e8f0; color: #334155; border: 2px dashed #64748b; }
 </style>
+<style id="test-bank">
+/* Score card, question map, filters and the Missed list (31 October 2026).
+   Topic colours are the owner's rainbow in deep shades for this light page
+   (TOPIC_COLOR); a colour always goes with the topic's number and name. Right
+   and wrong are told three ways: the fill, a mark (tick or cross) and words;
+   a wrong number is struck through. The current question has a dark ring. */
+:focus-visible{outline:3px solid #6d28d9;outline-offset:2px}
+button{min-height:44px}
+.sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.topline{max-width:960px;margin:0 auto;padding:14px 20px 0;display:flex;justify-content:flex-end}
+body:has(#app.wide) .topline{max-width:1240px}
+.topline + .wrap{padding-top:14px}
+.wrap.wide{max-width:1240px}
+.quiz-grid{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:22px;align-items:start}
+@media(max-width:980px){.quiz-grid{grid-template-columns:minmax(0,1fr)}}
+.side-col,.qmap{background:var(--card);border:1px solid var(--border);border-radius:16px;box-shadow:0 10px 30px rgba(3,105,161,0.12)}
+.side-col{padding:20px}
+.side-col h2,.missed-card h2{font-size:17px;margin:0 0 8px}
+.panel-sec + .panel-sec{margin-top:20px;padding-top:18px;border-top:1px solid var(--border)}
+.panel-foot{margin-top:18px;padding-top:16px;border-top:1px solid var(--border)}
+.missed-card .panel-foot{border-top:0;padding-top:0;margin-top:14px}
+.sc-big{font-size:44px;font-weight:800;line-height:1.05;color:var(--sky-deep);font-variant-numeric:tabular-nums}
+.sc-sub{color:var(--text);font-size:14px;margin:4px 0 14px}
+.sc-list,.st-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:12px}
+.sc-row,.st-head{display:flex;align-items:center;gap:8px;font-size:14px}
+.sc-name,.st-name{flex:1;min-width:0}
+.sc-n,.st-n{font-variant-numeric:tabular-nums;white-space:nowrap;font-weight:700}
+.dot{width:14px;height:14px;border-radius:50%;background:var(--tc);flex:none;display:inline-block;box-shadow:0 0 0 2px #fff,0 0 0 3px rgba(15,23,42,.35)}
+.sc-bar{height:10px;border-radius:999px;margin-top:6px;background:#e2e8f0;background:color-mix(in srgb,var(--tc) 18%,#fff);box-shadow:inset 0 0 0 1px var(--tc);overflow:hidden}
+.sc-fill{display:block;height:100%;background:var(--tc)}
+.st-links{display:flex;flex-wrap:wrap;gap:0 18px;margin:2px 0 0 22px}
+button.linkish,a.linkish{background:none;border:0;padding:8px 0;min-height:44px;color:#0c4a6e;font-weight:700;font-size:14px;text-decoration:underline;text-underline-offset:3px;cursor:pointer;display:inline-flex;align-items:center;font-family:inherit;border-radius:4px}
+button.linkish:hover,a.linkish:hover{color:#4c1d95;filter:none}
+.intro{color:var(--text);font-size:14.5px;line-height:1.55;margin:6px 0 12px}
+.parts{display:flex;gap:3px;margin:0 0 12px}
+button.seg{flex-basis:0;flex-shrink:1;min-width:8px;min-height:0;height:34px;padding:0 4px;border-radius:6px;background:var(--tc);color:#fff;font-size:12.5px;font-weight:800;border:0;overflow:hidden}
+button.seg[aria-pressed="true"]{outline:3px solid #0f172a;outline-offset:2px}
+.seg-l{display:block;white-space:nowrap;overflow:hidden}
+.chips-row{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-start;justify-content:space-between;margin-bottom:12px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;flex:1;min-width:0}
+button.chip{display:inline-flex;align-items:center;gap:7px;padding:8px 13px;border-radius:999px;background:#fff;color:#0f172a;border:1px solid #64748b;font-weight:600;font-size:13.5px;text-align:left}
+button.chip .chip-n{font-variant-numeric:tabular-nums;font-weight:800}
+button.chip.on{background:#0c4a6e;color:#fff;border:2px solid #0c4a6e;font-weight:800}
+button.chip:disabled{border-style:dashed}
+.shuf,.check{display:inline-flex;align-items:center;gap:9px;min-height:44px;font-size:14px;color:var(--text);cursor:pointer}
+.shuf{white-space:nowrap}
+.check{display:flex;margin-top:10px}
+.shuf input,.check input{width:20px;height:20px;accent-color:var(--sky-deep);flex:none}
+.qmap{padding:6px 16px 10px;margin-bottom:16px}
+.qmap summary{cursor:pointer;font-weight:700;font-size:15px;min-height:44px;display:flex;align-items:center;gap:6px;list-style:none}
+.qmap summary::-webkit-details-marker{display:none}
+.qmap summary::before{content:"\25B8";font-size:14px;width:14px}
+.qmap[open] summary::before{content:"\25BE"}
+.qmap-n{font-weight:400}
+.qmap-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(44px,1fr));gap:6px;margin:6px 0 10px;max-width:744px}
+button.qtile{min-width:44px;height:44px;padding:0 2px;border-radius:8px;background:#fff;color:#0f172a;border:3px solid var(--tc);font-weight:800;font-size:13px;display:flex;align-items:center;justify-content:center;gap:1px;font-variant-numeric:tabular-nums}
+button.qtile.st-right{background:#14532d;color:#fff}
+button.qtile.st-wrong{background:#7f1d1d;color:#fff}
+button.qtile.st-wrong .qn{text-decoration:line-through;text-decoration-thickness:2px}
+button.qtile .mk{font-size:12px}
+button.qtile.cur{outline:3px solid #0f172a;outline-offset:2px}
+button.qtile.cur:focus-visible{outline-color:#6d28d9}
+.qmap-key{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13px;color:var(--text);margin:2px 0 4px;align-items:center}
+.qmap-key > span{display:inline-flex;align-items:center;gap:6px}
+.kbox{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:5px;border:2px solid #334155;background:#fff;color:#fff;font-size:12px;font-weight:800}
+.kbox.k-right{background:#14532d}
+.kbox.k-wrong{background:#7f1d1d}
+.kbox.k-cur{outline:3px solid #0f172a;outline-offset:1px}
+.qtext:focus,#feedbackWrap:focus{outline:none}
+.domain-item .dot{margin-left:2px}
+dialog.confirm{background:#fff;color:#0f172a;border:2px solid #334155;border-radius:14px;padding:22px 24px;max-width:min(520px,calc(100vw - 32px))}
+dialog.confirm::backdrop{background:rgba(15,23,42,.6)}
+dialog.confirm h2{margin:0 0 10px;font-size:19px}
+dialog.confirm p{margin:0 0 18px;line-height:1.55;font-size:15px}
+@media(max-width:640px){.sc-big{font-size:38px}}
+/* Easier reading: a plainer face, wider letter, word and line spacing, a little larger. */
+html.easier body{font-family:Verdana,"DejaVu Sans",Tahoma,"Segoe UI",Arial,sans-serif;letter-spacing:.03em;word-spacing:.12em;line-height:1.7}
+html.easier button,html.easier input{font-family:inherit;letter-spacing:.02em}
+html.easier .qtext{font-size:19px;line-height:1.7}
+html.easier .choice{font-size:16px;line-height:1.65}
+html.easier .explain-box{font-size:15px;line-height:1.7}
+html.easier .sub,html.easier .note,html.easier .retake-note,html.easier .intro,html.easier .sc-row,html.easier .st-head,html.easier .qmeta{font-size:15px}
+html.easier .disclaimer{font-size:14px;text-align:left}
+html.easier button.qtile,html.easier button.seg{letter-spacing:0;word-spacing:0}
+</style>
 </head>
 <body>
+<div class="topline"><button type="button" class="ghost" id="easierBtn" aria-pressed="false">Easier reading: off</button></div>
 <div class="wrap" id="app"></div>
+<dialog id="confirmDlg" class="confirm" aria-labelledby="confirmTitle" aria-describedby="confirmBody">
+  <h2 id="confirmTitle"></h2>
+  <p id="confirmBody"></p>
+  <div class="row"><button type="button" id="confirmYes"></button><button type="button" class="ghost" id="confirmNo"></button></div>
+</dialog>
 
 <script id="question-data" type="application/json">[
   {
@@ -13093,6 +13188,34 @@ Object.values(SUB_OBJECTIVES).forEach(list => list.forEach(s => SUB_LABEL[s.id] 
 const ALL_SUB_IDS = Object.values(SUB_OBJECTIVES).flat().map(s => s.id);
 const MIN_Q = 45, MAX_Q = 245;
 const STORAGE_KEY = "core2_quiz_session_v2";
+// The lasting Missed list (31 October 2026): every question answered wrong, in
+// any quiz, stays on it until it is answered right. {id: {n: misses, at: when}}
+const MISSED_KEY = "core2_missed_v1";
+const SHUFFLE_KEY = "core2_shuffle_v1";
+// Easier reading is one setting for all of the program's test banks. They share
+// an origin (rafikiscyent888.github.io), so on stays on across them and visits.
+const EASIER_KEY = "cwp-easier-reading";
+// Each topic's own colour: the rainbow, chosen by the owner on 31 October 2026,
+// in deep shades for this light page. A colour never stands alone: the topic's
+// number and name go with it, and white lettering on any of them is over 7:1.
+const TOPIC_COLOR = {
+  "1.1": "#992645", "1.2": "#702903", "1.3": "#75500f",
+  "2.1": "#474503", "2.2": "#376130",
+  "3.1": "#064e3f", "3.2": "#166069", "3.3": "#0b4768",
+  "4.1": "#3d4daa", "4.2": "#552381", "4.3": "#892e75",
+};
+// Questions written for the updated objectives (30 September 2026).
+const NEW_SOURCE = "Added 30 Sept 2026";
+const NEW_CHIP = "New for the updated objectives";
+// "Review in CertMaster Learn" opens CompTIA's CertMaster Learn sign-in until
+// the owner confirms the address their students use. No lesson numbers: the
+// lesson list for 220-1202 is not public, so none are guessed.
+const CERTMASTER_URL = "https://learn.comptia.org/login";
+const TOPIC_Q = 25;   // questions in a "Practise this topic" quiz
+// Question ids are numbers; the Missed list stores them as text (object keys),
+// so both maps are keyed by the id as text.
+const BY_ID = new Map(QUESTION_BANK.map(q => [String(q.id), q]));
+const BANK_POS = new Map(QUESTION_BANK.map((q, i) => [String(q.id), i]));
 
 const app = document.getElementById('app');
 
@@ -13102,9 +13225,11 @@ function subCounts(){
   QUESTION_BANK.forEach(q => { if(c[q.sub] !== undefined) c[q.sub]++; });
   return c;
 }
+
 function poolForSubs(selected){
   return QUESTION_BANK.filter(q => selected.includes(q.sub));
 }
+
 function shuffle(arr){
   const a = arr.slice();
   for(let i=a.length-1;i>0;i--){
@@ -13113,6 +13238,7 @@ function shuffle(arr){
   }
   return a;
 }
+
 function loadSession(){
   try{
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -13129,18 +13255,187 @@ function saveSession(s){
 function clearSession(){
   localStorage.removeItem(STORAGE_KEY);
 }
+
 function questionById(id){
-  return QUESTION_BANK.find(q => q.id === id);
+  return BY_ID.get(String(id));
 }
-function escapeHtml(s){
-  const d = document.createElement('div');
-  d.textContent = s == null ? '' : String(s);
-  return d.innerHTML;
+function isNew(q){ return typeof q.source === 'string' && q.source.indexOf(NEW_SOURCE) === 0; }
+function tc(id){ return `--tc:${TOPIC_COLOR[id] || '#cbd5e1'}`; }
+function dot(id){ return `<span class="dot" style="${tc(id)}" aria-hidden="true"></span>`; }
+function topicText(id){ return `${id} ${escapeHtml(SUB_LABEL[id] || '')}`; }
+
+// ---------- Settings that last ----------
+function shuffleOn(){ try{ return localStorage.getItem(SHUFFLE_KEY) !== '0'; }catch(e){ return true; } }
+function setShuffle(on){ try{ localStorage.setItem(SHUFFLE_KEY, on ? '1' : '0'); }catch(e){} }
+
+// ---------- The lasting Missed list ----------
+function loadMissed(){
+  try{
+    const m = JSON.parse(localStorage.getItem(MISSED_KEY) || '{}');
+    if(m && typeof m === 'object' && !Array.isArray(m)) return m;
+  }catch(e){}
+  return {};
+}
+function saveMissed(m){ try{ localStorage.setItem(MISSED_KEY, JSON.stringify(m)); }catch(e){} }
+function recordAnswer(id, right){
+  const m = loadMissed();
+  if(right) delete m[id];
+  else m[id] = { n: ((m[id] && m[id].n) || 0) + 1, at: new Date().toISOString() };
+  saveMissed(m);
+}
+function missedList(){ return Object.keys(loadMissed()).filter(k => BY_ID.has(k)).map(k => BY_ID.get(k).id); }
+// "Study these first": the topics in the Missed list, most missed first.
+function studyTopics(){
+  const c = {};
+  missedList().forEach(id => { const s = questionById(id).sub; c[s] = (c[s] || 0) + 1; });
+  return ALL_SUB_IDS.filter(id => c[id]).map(id => ({ id: id, n: c[id] }))
+    .sort((a, b) => b.n - a.n || ALL_SUB_IDS.indexOf(a.id) - ALL_SUB_IDS.indexOf(b.id));
+}
+
+// Shuffle order on: the questions and each question's answers are shuffled.
+// Off: the questions in the bank's order and the answers as written.
+function makeOrder(ids, mix){
+  const list = mix ? shuffle(ids) : ids.slice().sort((a, b) => BANK_POS.get(String(a)) - BANK_POS.get(String(b)));
+  return list.map(id => ({ id: id, displayOrder: mix ? shuffle([0,1,2,3]) : [0,1,2,3] }));
+}
+// Turning Shuffle order on or off part-way through keeps every answer given
+// and stays on the same question.
+function reorder(session, mix){
+  const curId = session.order[session.current].id;
+  const chosen = new Map(session.order.map((e, i) => [e.id, session.answers[i] === null ? null : e.displayOrder[session.answers[i]]]));
+  const order = makeOrder(session.order.map(e => e.id), mix);
+  session.order = order;
+  session.answers = order.map(e => { const o = chosen.get(e.id); return o === null ? null : e.displayOrder.indexOf(o); });
+  session.current = order.findIndex(e => e.id === curId);
+}
+
+// Where each question of a session stands: 'right', 'wrong' or 'none'.
+function states(session){
+  return session.order.map((e, i) => {
+    const a = session.answers[i];
+    if(a === null || a === undefined) return 'none';
+    return e.displayOrder[a] === questionById(e.id).correct ? 'right' : 'wrong';
+  });
+}
+function topicsIn(session){
+  const set = new Set(session.order.map(e => questionById(e.id).sub));
+  return ALL_SUB_IDS.filter(id => set.has(id));
+}
+function matches(session, i, st, f){
+  const q = questionById(session.order[i].id);
+  if(f === 'all') return true;
+  if(f === 'new') return isNew(q);
+  if(f === 'missed') return st[i] === 'wrong';
+  return q.sub === f;
+}
+function visibleIn(session, st){
+  const f = session.filter || 'all';
+  return session.order.map((_, i) => i).filter(i => matches(session, i, st, f));
+}
+
+// ---------- Confirm before anything that throws work away ----------
+function askConfirm(o){
+  return new Promise(resolve => {
+    const d = document.getElementById('confirmDlg');
+    if(!d || typeof d.showModal !== 'function'){ resolve(window.confirm(o.title + '\n\n' + o.body)); return; }
+    const yes = document.getElementById('confirmYes'), no = document.getElementById('confirmNo');
+    document.getElementById('confirmTitle').textContent = o.title;
+    document.getElementById('confirmBody').textContent = o.body;
+    yes.textContent = o.yes; no.textContent = o.no;
+    let settled = false;
+    const done = v => {
+      if(settled) return; settled = true;
+      d.removeEventListener('close', onClose); yes.onclick = null; no.onclick = null;
+      if(d.open) d.close();
+      resolve(v);
+    };
+    const onClose = () => done(false);
+    yes.onclick = () => done(true);
+    no.onclick = () => done(false);
+    d.addEventListener('close', onClose);
+    d.showModal();
+    no.focus();
+  });
+}
+function quizUnderway(){
+  const s = loadSession();
+  return s && !s.finished && s.answers.some(a => a !== null) && s.answers.some(a => a === null) ? s : null;
+}
+async function leaveThenStart(start){
+  const s = quizUnderway();
+  if(s){
+    const n = s.answers.filter(a => a !== null).length;
+    const ok = await askConfirm({
+      title: 'Leave the quiz you are on?',
+      body: `You have answered ${n} of ${s.order.length} questions. Starting something new ends that quiz here. Every answer you gave is already counted in your Missed list.`,
+      yes: 'Leave and start', no: 'Stay on this quiz'
+    });
+    if(!ok) return;
+  }
+  start();
+}
+
+// ---------- The score card, "Study these first" and their buttons ----------
+function scorePanel(session, st){
+  const right = st.filter(x => x === 'right').length;
+  const answered = st.filter(x => x !== 'none').length;
+  const left = st.length - answered;
+  const pct = answered ? Math.round(right / answered * 100) + '%' : '&mdash;';
+  const rows = topicsIn(session).map(id => {
+    let r = 0, t = 0;
+    session.order.forEach((e, i) => { if(questionById(e.id).sub === id){ t++; if(st[i] === 'right') r++; } });
+    return `<li class="sc-item" style="${tc(id)}">
+      <div class="sc-row">${dot(id)}<span class="sc-name">${topicText(id)}</span><span class="sc-n">${r}/${t} right</span></div>
+      <div class="sc-bar" aria-hidden="true"><span class="sc-fill" style="width:${t ? (r / t * 100).toFixed(1) : 0}%"></span></div>
+    </li>`;
+  }).join('');
+  return `<section class="panel-sec scorecard" aria-labelledby="scHead">
+    <h2 id="scHead">Your score</h2>
+    <div class="sc-big">${pct}</div>
+    <div class="sc-sub">${right} right of ${answered} answered &middot; ${left} left</div>
+    <ul class="sc-list">${rows}</ul>
+  </section>`;
+}
+function studyPanel(){
+  const list = studyTopics();
+  const items = list.map(t => `<li class="st-item" style="${tc(t.id)}">
+      <div class="st-head">${dot(t.id)}<span class="st-name">${topicText(t.id)}</span><span class="st-n">${t.n} missed</span></div>
+      <div class="st-links">
+        <button type="button" class="linkish" data-practise="${t.id}">Practise this topic<span class="sr"> (${topicText(t.id)})</span></button>
+        <a class="linkish" href="${CERTMASTER_URL}" target="_blank" rel="noopener">Review in CertMaster Learn<span class="sr"> (${topicText(t.id)}; opens in a new tab)</span><span aria-hidden="true">&nbsp;&#8599;</span></a>
+      </div>
+    </li>`).join('');
+  return `<section class="panel-sec study" aria-labelledby="stHead">
+    <h2 id="stHead">Study these first</h2>
+    ${list.length
+      ? `<p class="note">The topics in your Missed list, most missed first. A question leaves the list when you answer it right.</p><ol class="st-list">${items}</ol>`
+      : `<p class="note">Nothing in your Missed list yet. A question you answer wrong is kept here, under its topic, until you answer it right.</p>`}
+  </section>`;
+}
+function panelButtons(session){
+  const n = missedList().length;
+  return `<div class="panel-foot row">
+    <button type="button" id="missedAllBtn" ${n ? '' : 'disabled'}>Retake all missed (${n})</button>
+    ${session ? `<button type="button" class="ghost" id="resetBtn">Reset this quiz</button>` : ''}
+  </div>`;
+}
+function wirePanel(session){
+  app.querySelectorAll('[data-practise]').forEach(b => b.addEventListener('click', () => leaveThenStart(() => startTopic(b.dataset.practise))));
+  const m = document.getElementById('missedAllBtn');
+  if(m) m.addEventListener('click', () => leaveThenStart(startMissedAll));
+  const r = document.getElementById('resetBtn');
+  if(r) r.addEventListener('click', () => resetQuiz(session));
+}
+
+function shuffleBox(id){
+  return `<label class="check"><input type="checkbox" id="${id}" ${shuffleOn() ? 'checked' : ''}/> <span><strong>Shuffle order</strong>: the questions, and the answers within each question</span></label>`;
 }
 
 // ---------- Dashboard ----------
 function renderDashboard(){
+  app.className = 'wrap';
   const existing = loadSession();
+  const nMissed = missedList().length;
   app.innerHTML = `
     <div class="hero">
       <h1>CompTIA A+ Core 2 Practice Exam</h1>
@@ -13155,6 +13450,7 @@ function renderDashboard(){
           <button id="discardBtn" class="danger">Discard</button>
         </div>
       </div>` : ``}
+    ${nMissed ? `<div class="card missed-card">${studyPanel()}${panelButtons(null)}</div>` : ''}
     <div class="tiles">
       <button class="tile storm" id="fullExamTile">
         <div class="icon">&#9928;&#65039;</div>
@@ -13192,20 +13488,24 @@ function renderDashboard(){
         </div>
       </button>
     </div>
+    ${shuffleBox('shuffleChk')}
   `;
   document.getElementById('fullExamTile').addEventListener('click', renderSetup);
   document.getElementById('quick10Tile').addEventListener('click', () => startQuiz(ALL_SUB_IDS.slice(), 10));
   document.getElementById('quick15Tile').addEventListener('click', () => startQuiz(ALL_SUB_IDS.slice(), 15));
   document.getElementById('quick20Tile').addEventListener('click', () => startQuiz(ALL_SUB_IDS.slice(), 20));
   document.getElementById('quick25Tile').addEventListener('click', () => startQuiz(ALL_SUB_IDS.slice(), 25));
+  document.getElementById('shuffleChk').addEventListener('change', e => setShuffle(e.target.checked));
   if(existing && !existing.finished){
     document.getElementById('resumeBtn').addEventListener('click', () => renderQuiz(existing));
     document.getElementById('discardBtn').addEventListener('click', () => { clearSession(); renderDashboard(); });
   }
+  wirePanel(null);
 }
 
-// ---------- Setup screen ----------
+// ---------- Setup screen (Full Practice Exam) ----------
 function renderSetup(){
+  app.className = 'wrap';
   const counts = subCounts();
   const selected = new Set(ALL_SUB_IDS.filter(id => counts[id] > 0));
   let countVal = 100;
@@ -13239,6 +13539,7 @@ function renderSetup(){
           <input type="number" id="countNum" min="${effMin}" max="${effMax}" value="${countVal}" />
         </div>
         <div class="note">Choose between ${MIN_Q} and ${MAX_Q} questions. Currently <strong>${available}</strong> question${available===1?'':'s'} available for the selected objectives${available < countVal ? ' — count has been capped.' : ''}.</div>
+        ${shuffleBox('shuffleSetup')}
         <div class="row" style="margin-top:20px">
           <button id="startBtn" ${available===0?'disabled':''}>Start Quiz</button>
         </div>
@@ -13259,7 +13560,7 @@ function renderSetup(){
         item.className = 'domain-item';
         const id = 'sub_' + s.id.replace('.','_');
         item.innerHTML = `<input type="checkbox" id="${id}" ${selected.has(s.id)?'checked':''}/>
-          <label for="${id}">${s.id} &mdash; ${s.label}</label>
+          ${dot(s.id)}<label for="${id}">${s.id} &mdash; ${s.label}</label>
           <span class="domain-count">${counts[s.id]} question${counts[s.id]===1?'':'s'}</span>`;
         item.querySelector('input').addEventListener('change', e => {
           if(e.target.checked) selected.add(s.id); else selected.delete(s.id);
@@ -13289,6 +13590,7 @@ function renderSetup(){
       countVal = v;
       draw();
     });
+    document.getElementById('shuffleSetup').addEventListener('change', e => setShuffle(e.target.checked));
     document.getElementById('startBtn').addEventListener('click', () => {
       startQuiz(Array.from(selected), countVal);
     });
@@ -13297,118 +13599,308 @@ function renderSetup(){
 }
 
 // Retake: a new round made only of the questions missed last round (wrong
-// or unanswered), reshuffled, answer positions reshuffled too. Rounds repeat
+// or unanswered), in a new order when Shuffle order is on. Rounds repeat
 // until nothing is left to retake.
 function startRetake(prev, ids){
-  const order = shuffle(ids).map(id => ({ id: id, displayOrder: shuffle([0,1,2,3]) }));
+  const order = makeOrder(ids, shuffleOn());
   const session = {
     v: 1,
     domains: prev.domains,
+    kind: prev.kind || 'quiz',
+    topic: prev.topic,
     order: order,
     answers: order.map(() => null),
     current: 0,
     finished: false,
     round: (prev.round || 1) + 1,
+    filter: 'all',
     startedAt: new Date().toISOString()
   };
+  saveSession(session);
+  renderQuiz(session);
+}
+
+function begin(ids, extra){
+  const order = makeOrder(ids, shuffleOn());
+  const session = Object.assign({
+    v: 1,
+    kind: 'quiz',
+    order: order,
+    answers: order.map(() => null),
+    current: 0,
+    finished: false,
+    filter: 'all',
+    startedAt: new Date().toISOString()
+  }, extra);
   saveSession(session);
   renderQuiz(session);
 }
 
 function startQuiz(selectedSubs, count){
   const pool = shuffle(poolForSubs(selectedSubs)).slice(0, count);
-  const order = pool.map(q => ({ id: q.id, displayOrder: shuffle([0,1,2,3]) }));
-  const session = {
-    v: 1,
-    domains: selectedSubs,
-    order: order,
-    answers: order.map(() => null),
-    current: 0,
-    finished: false,
-    startedAt: new Date().toISOString()
-  };
+  begin(pool.map(q => q.id), { domains: selectedSubs });
+}
+
+// "Retake all missed": every question on the lasting Missed list.
+function startMissedAll(){
+  const ids = missedList();
+  if(!ids.length) return;
+  begin(ids, { kind: 'missed', domains: [...new Set(ids.map(id => questionById(id).sub))] });
+}
+
+// "Practise this topic": up to 25 of the topic's questions, every one of its
+// missed questions among them.
+function startTopic(sub){
+  const missed = new Set(missedList().map(String));
+  const all = QUESTION_BANK.filter(q => q.sub === sub).map(q => q.id);
+  const first = shuffle(all.filter(id => missed.has(String(id))));
+  const rest = shuffle(all.filter(id => !missed.has(String(id))));
+  begin(first.concat(rest).slice(0, Math.max(TOPIC_Q, first.length)), { kind: 'topic', topic: sub, domains: [sub] });
+}
+
+async function resetQuiz(session){
+  const n = session.order.length;
+  const ok = await askConfirm({
+    title: 'Reset this quiz?',
+    body: `Your answers to these ${n} questions are cleared and you start again at question 1${shuffleOn() ? ', in a new order' : ''}. Your Missed list stays as it is.`,
+    yes: 'Reset this quiz', no: 'Keep my answers'
+  });
+  if(!ok) return;
+  const order = makeOrder(session.order.map(e => e.id), shuffleOn());
+  Object.assign(session, { order: order, answers: order.map(() => null), current: 0, finished: false, filter: 'all' });
   saveSession(session);
-  renderQuiz(session);
+  renderQuiz(session, 'q');
+}
+
+async function finishQuiz(session){
+  const st = states(session);
+  const left = st.filter(x => x === 'none').length;
+  if(left){
+    const ok = await askConfirm({
+      title: `Finish with ${left} unanswered?`,
+      body: `${left} question${left === 1 ? ' is' : 's are'} not answered yet. Unanswered questions are offered again in "Retake the ones I missed", but they are not added to your Missed list.`,
+      yes: 'Finish anyway', no: 'Go to the first unanswered'
+    });
+    if(!ok){
+      session.filter = 'all';
+      session.current = st.indexOf('none');
+      saveSession(session);
+      renderQuiz(session, 'q');
+      return;
+    }
+  }
+  session.finished = true;
+  saveSession(session);
+  renderResults(session);
+}
+
+// ---------- The parts bar, filter chips and question map ----------
+function partsHtml(session, st){
+  const segs = topicsIn(session).map(id => {
+    let a = 0, t = 0;
+    session.order.forEach((e, i) => { if(questionById(e.id).sub === id){ t++; if(st[i] !== 'none') a++; } });
+    return `<button type="button" class="seg" style="${tc(id)};flex-grow:${t}" data-filter="${id}" data-long="${id} ${a}/${t}" data-short="${id}" aria-pressed="${session.filter === id}" aria-label="${topicText(id)}: ${a} of ${t} answered. Show only this topic."><span class="seg-l">${id} ${a}/${t}</span></button>`;
+  }).join('');
+  return `<div class="parts" role="group" aria-label="Topics in this quiz, each as wide as its share of the questions">${segs}</div>`;
+}
+// Each part's label is as long as its part has room for: "1.1 2/3", "1.1", or
+// nothing (its chip below always has the full name and count).
+function fitParts(){
+  document.querySelectorAll('.seg').forEach(s => {
+    const l = s.querySelector('.seg-l');
+    l.textContent = s.dataset.long;
+    if(l.scrollWidth > l.clientWidth){ l.textContent = s.dataset.short; if(l.scrollWidth > l.clientWidth) l.textContent = ''; }
+  });
+}
+window.addEventListener('resize', fitParts);
+
+function chipsHtml(session, st){
+  const f = session.filter || 'all';
+  const all = session.order.map((_, i) => i);
+  const answered = ix => ix.filter(i => st[i] !== 'none').length;
+  const chip = (key, label, count, style, disabled, name) =>
+    `<button type="button" class="chip${f === key ? ' on' : ''}" data-filter="${key}" aria-pressed="${f === key}" ${style ? `style="${style}"` : ''} ${disabled ? 'disabled' : ''}${name ? ` title="${name}" aria-label="${name}, ${count} answered"` : ''}>${f === key ? '<span class="chk" aria-hidden="true">&#10003;</span>' : ''}${label} <span class="chip-n">${count}</span></button>`;
+  let h = chip('all', 'All', `${answered(all)}/${all.length}`);
+  // A topic's chip carries its number; the full name is beside it in the score card.
+  topicsIn(session).forEach(id => {
+    const ix = all.filter(i => questionById(session.order[i].id).sub === id);
+    h += chip(id, `${dot(id)}${id}`, `${answered(ix)}/${ix.length}`, tc(id), false, topicText(id));
+  });
+  const nw = all.filter(i => isNew(questionById(session.order[i].id)));
+  if(nw.length) h += chip('new', NEW_CHIP, `${answered(nw)}/${nw.length}`);
+  const ms = all.filter(i => st[i] === 'wrong').length;
+  h += chip('missed', 'Missed', String(ms), '', ms === 0 && f !== 'missed');
+  return `<div class="chips" role="group" aria-label="Show which questions">${h}</div>`;
+}
+
+function mapHtml(session, st, vis, cur, review){
+  const tiles = vis.map(i => {
+    const q = questionById(session.order[i].id), s = st[i];
+    const word = s === 'right' ? 'right' : s === 'wrong' ? 'wrong' : 'not answered';
+    const mark = s === 'right' ? '<span class="mk" aria-hidden="true">&#10003;</span>' : s === 'wrong' ? '<span class="mk" aria-hidden="true">&#10007;</span>' : '';
+    return `<button type="button" class="qtile st-${s}${i === cur ? ' cur' : ''}" style="${tc(q.sub)}" data-pos="${i}" title="${topicText(q.sub)}" aria-label="Question ${i + 1}, ${topicText(q.sub)}, ${word}"${i === cur ? ' aria-current="step"' : ''}><span class="qn">${i + 1}</span>${mark}</button>`;
+  }).join('');
+  const open = session.mapOpen !== undefined ? session.mapOpen : session.order.length <= 60;
+  const n = vis.length === session.order.length ? `${vis.length}` : `showing ${vis.length} of ${session.order.length}`;
+  return `<details class="qmap" id="qmap" ${open ? 'open' : ''}>
+    <summary>${review ? 'Review any question' : 'Jump to any question'} <span class="qmap-n">(${n})</span></summary>
+    <div class="qmap-grid">${tiles}</div>
+    <p class="qmap-key"><span>Border: the question's topic colour.</span> <span><span class="kbox k-right">&#10003;</span> right</span> <span><span class="kbox k-wrong"><s>7</s></span> wrong, struck through</span> <span><span class="kbox k-none"></span> not answered</span>${review ? '' : ' <span><span class="kbox k-cur"></span> this question</span>'}</p>
+  </details>`;
+}
+
+function bannerHtml(session){
+  if((session.round || 1) > 1) return `<div class="retake-banner" role="note"><strong>Retake round ${session.round - 1}</strong> &mdash; only the questions you missed last time.</div>`;
+  if(session.kind === 'missed') return `<div class="retake-banner" role="note"><strong>Your Missed list</strong> &mdash; every question you have answered wrong and not yet answered right. Each one you get right comes off the list.</div>`;
+  if(session.kind === 'topic') return `<div class="retake-banner" role="note"><strong>Practising ${topicText(session.topic)}</strong> &mdash; every question you have missed on this topic is included.</div>`;
+  return '';
 }
 
 // ---------- Quiz screen ----------
-function renderQuiz(session){
+function renderQuiz(session, focus){
+  app.className = 'wrap wide';
+  if(!session.filter) session.filter = 'all';
   const total = session.order.length;
+  const st = states(session);
+  let vis = visibleIn(session, st);
+  if(!vis.length){ session.filter = 'all'; vis = visibleIn(session, st); }
+  if(vis.indexOf(session.current) < 0) session.current = vis[0];
   const idx = session.current;
   const entry = session.order[idx];
   const q = questionById(entry.id);
-  const answeredIdx = session.answers[idx];
+  const answeredIdx = session.answers[idx]; // display-position index, or null
+  const review = !!session.finished;
+  const k = vis.indexOf(idx);
+  const prevPos = vis[k - 1], nextPos = vis[k + 1];
 
-  const answeredCount = session.answers.filter(a=>a!==null).length;
-  const pct = Math.round((idx / total) * 100);
+  const answeredCount = st.filter(x => x !== 'none').length;
+  const pct = Math.round((answeredCount / total) * 100);
+  const nTopics = topicsIn(session).length;
+  const nNew = session.order.filter(e => isNew(questionById(e.id))).length;
+  const nextLabel = nextPos !== undefined ? 'Next ▶' : session.filter !== 'all' ? 'Show all questions' : review ? 'Back to results' : 'Finish Quiz';
 
   app.innerHTML = `
-    <h1>CompTIA A+ Core 2 Practice Exam</h1>
-    ${(session.round || 1) > 1 ? `<div class="retake-banner" role="note"><strong>Retake round ${session.round - 1}</strong> &mdash; only the questions you missed last time.</div>` : ''}
-    <div class="qmeta">
-      <span>Question ${idx+1} of ${total} &middot; ${q.sub} ${SUB_LABEL[q.sub] || q.domain}</span>
-      <span>${answeredCount} answered</span>
-    </div>
-    <div class="progress"><div class="bar" style="width:${pct}%"></div></div>
-    <div class="card">
-      <div class="qtext">${escapeHtml(q.q)}</div>
-      <div class="choices" id="choicesWrap"></div>
-      <div id="feedbackWrap"></div>
-      <div class="controls">
-        <button class="ghost" id="pauseBtn">Pause &amp; Save</button>
-        <div class="row">
-          <button class="ghost" id="prevBtn" ${idx===0?'disabled':''}>&#9664; Prev</button>
-          <button id="nextBtn" disabled>${idx===total-1 ? 'Finish Quiz' : 'Next ▶'}</button>
+    <div class="quiz-grid">
+      <div class="main-col">
+        <h1>CompTIA A+ Core 2 Practice Exam${review ? ' &mdash; review' : ''}</h1>
+        ${bannerHtml(session)}
+        <p class="intro">${total} question${total === 1 ? '' : 's'} in ${nTopics} colour-coded topic${nTopics === 1 ? '' : 's'}${nNew ? `, ${nNew} of them new for the updated objectives` : ''}. ${review ? 'Choose a question to see your answer and why.' : 'Choose an answer to see whether you&rsquo;re right and why.'}</p>
+        ${partsHtml(session, st)}
+        <div class="chips-row">
+          ${chipsHtml(session, st)}
+          ${review ? '' : `<label class="shuf"><input type="checkbox" id="shuffleQuiz" ${shuffleOn() ? 'checked' : ''}/> Shuffle order</label>`}
+        </div>
+        ${mapHtml(session, st, vis, idx, review)}
+        <div class="qmeta">
+          <span>Question ${idx+1} of ${total} &middot; ${q.sub} ${SUB_LABEL[q.sub] || q.domain}</span>
+          <span>${answeredCount} answered</span>
+        </div>
+        <div class="progress"><div class="bar" style="width:${pct}%"></div></div>
+        <div class="card qcard">
+          <div class="qtext" id="qtext" tabindex="-1">${escapeHtml(q.q)}</div>
+          <div class="choices" id="choicesWrap"></div>
+          <div id="feedbackWrap" tabindex="-1"></div>
+          <div class="controls">
+            ${review ? '<button class="ghost" id="backBtn">Back to results</button>' : '<button class="ghost" id="pauseBtn">Pause &amp; Save</button>'}
+            <div class="row">
+              <button class="ghost" id="prevBtn" ${prevPos === undefined ? 'disabled' : ''}>&#9664; Prev</button>
+              <button id="nextBtn" ${!review && answeredIdx === null ? 'disabled' : ''}>${nextLabel}</button>
+            </div>
+          </div>
         </div>
       </div>
+      <aside class="side-col" aria-label="Your score and what to study">
+        ${scorePanel(session, st)}
+        ${studyPanel()}
+        ${panelButtons(session)}
+      </aside>
     </div>
   `;
 
   const choicesWrap = document.getElementById('choicesWrap');
+  const locked = review || answeredIdx !== null;
   entry.displayOrder.forEach((origIdx, pos) => {
     const div = document.createElement('div');
     div.className = 'choice';
     div.innerHTML = `<strong>${String.fromCharCode(65+pos)}.</strong> ${escapeHtml(q.choices[origIdx])}`;
-    div.addEventListener('click', () => {
-      if(session.answers[idx] !== null) return;
+    const pick = () => {
+      if(session.finished || session.answers[idx] !== null) return; // already locked
       session.answers[idx] = pos;
+      recordAnswer(q.id, origIdx === q.correct);
       saveSession(session);
-      renderQuiz(session);
-    });
+      renderQuiz(session, 'feedback');
+    };
+    if(!locked){
+      div.setAttribute('role', 'button');
+      div.tabIndex = 0;
+      div.addEventListener('keydown', e => { if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); pick(); } });
+    }
+    div.addEventListener('click', pick);
     choicesWrap.appendChild(div);
   });
 
-  if(answeredIdx !== null){
-    lockChoices(entry, q, answeredIdx);
-    document.getElementById('nextBtn').disabled = false;
+  if(locked){
+    lockChoices(session, entry, q, answeredIdx);
   }
 
-  document.getElementById('prevBtn').addEventListener('click', () => {
-    session.current = Math.max(0, idx - 1);
-    saveSession(session);
-    renderQuiz(session);
-  });
+  const go = pos => { session.current = pos; saveSession(session); renderQuiz(session, 'q'); };
+  document.getElementById('prevBtn').addEventListener('click', () => { if(prevPos !== undefined) go(prevPos); });
   document.getElementById('nextBtn').addEventListener('click', () => {
-    if(idx === total - 1){
-      session.finished = true;
-      saveSession(session);
-      renderResults(session);
-    } else {
-      session.current = idx + 1;
-      saveSession(session);
-      renderQuiz(session);
+    if(nextPos !== undefined){ go(nextPos); return; }
+    if(session.filter !== 'all'){
+      session.filter = 'all';
+      const firstOpen = states(session).indexOf('none');
+      go(review || firstOpen < 0 ? idx : firstOpen);
+      return;
     }
+    if(review) renderResults(session);
+    else finishQuiz(session);
   });
-  document.getElementById('pauseBtn').addEventListener('click', () => {
+  if(review){
+    document.getElementById('backBtn').addEventListener('click', () => renderResults(session));
+  } else {
+    document.getElementById('pauseBtn').addEventListener('click', () => {
+      saveSession(session);
+      renderDashboard();
+    });
+    document.getElementById('shuffleQuiz').addEventListener('change', e => {
+      setShuffle(e.target.checked);
+      reorder(session, e.target.checked);
+      saveSession(session);
+      renderQuiz(session, '#shuffleQuiz');
+    });
+  }
+  app.querySelectorAll('[data-filter]').forEach(b => b.addEventListener('click', () => {
+    const f = b.dataset.filter;
+    session.filter = (session.filter === f && f !== 'all') ? 'all' : f;  // pressing a chosen chip again shows all
+    const v = visibleIn(session, states(session));
+    if(v.indexOf(session.current) < 0) session.current = v[0];
     saveSession(session);
-    renderDashboard();
-  });
+    renderQuiz(session, (b.classList.contains('seg') ? '.seg' : '.chip') + `[data-filter="${f}"]`);
+  }));
+  app.querySelectorAll('.qtile').forEach(b => b.addEventListener('click', () => go(parseInt(b.dataset.pos, 10))));
+  const det = document.getElementById('qmap');
+  det.addEventListener('toggle', () => { if(session.mapOpen !== det.open){ session.mapOpen = det.open; saveSession(session); } });
+  wirePanel(session);
+  fitParts();
+
+  if(focus === 'feedback'){
+    document.getElementById('feedbackWrap').focus({ preventScroll: true });
+  } else if(focus === 'q'){
+    const t = document.getElementById('qtext');
+    t.focus({ preventScroll: true });
+    const r = t.closest('.card').getBoundingClientRect();
+    if(r.top < 0 || r.top > window.innerHeight - 140) t.closest('.card').scrollIntoView({ block: 'start' });
+  } else if(focus){
+    const el = app.querySelector(focus);
+    if(el) el.focus({ preventScroll: true });
+  }
 }
 
-function lockChoices(entry, q, answeredPos){
+function lockChoices(session, entry, q, answeredPos){
   const choicesWrap = document.getElementById('choicesWrap');
   const correctPos = entry.displayOrder.indexOf(q.correct);
-  const chosenOrigIdx = entry.displayOrder[answeredPos];
+  const chosenOrigIdx = answeredPos === null ? null : entry.displayOrder[answeredPos];
   const wasCorrect = chosenOrigIdx === q.correct;
 
   Array.from(choicesWrap.children).forEach((div, pos) => {
@@ -13424,7 +13916,10 @@ function lockChoices(entry, q, answeredPos){
 
   const fb = document.getElementById('feedbackWrap');
   let html = '';
-  if(wasCorrect){
+  if(chosenOrigIdx === null){
+    html += `<div class="explain-box"><span class="tag bad">Not answered</span>This quiz was finished before this question was answered.</div>`;
+    html += `<div class="explain-box"><span class="tag good">Correct answer</span>${escapeHtml(q.choices[q.correct])} &mdash; ${escapeHtml(q.explain)}</div>`;
+  } else if(wasCorrect){
     html += `<div class="explain-box"><span class="tag good">Correct</span>${escapeHtml(q.explain)}</div>`;
   } else {
     const specific = Array.isArray(q.wrongExplain) && q.wrongExplain[chosenOrigIdx];
@@ -13437,9 +13932,10 @@ function lockChoices(entry, q, answeredPos){
 
 // ---------- Results screen ----------
 function renderResults(session){
+  app.className = 'wrap wide';
   const total = session.order.length;
+  const st = states(session);
   let correctCount = 0;
-  const perSub = {};
   const missed = [];
 
   session.order.forEach((entry, i) => {
@@ -13447,9 +13943,7 @@ function renderResults(session){
     const answeredPos = session.answers[i];
     const chosenOrigIdx = answeredPos === null ? null : entry.displayOrder[answeredPos];
     const isCorrect = chosenOrigIdx === q.correct;
-    if(!perSub[q.sub]) perSub[q.sub] = {correct:0, total:0};
-    perSub[q.sub].total++;
-    if(isCorrect){ correctCount++; perSub[q.sub].correct++; }
+    if(isCorrect){ correctCount++; }
     else missed.push({q, chosenOrigIdx});
   });
 
@@ -13458,52 +13952,47 @@ function renderResults(session){
 
   const round = session.round || 1;
   const missedIds = missed.map(m => m.q.id);
+  const what = round > 1 ? ` &mdash; retake round ${round - 1}` : session.kind === 'missed' ? ' &mdash; your Missed list' : session.kind === 'topic' ? ` &mdash; ${topicText(session.topic)}` : '';
+  session.filter = 'all';
+  const all = session.order.map((_, i) => i);
   app.innerHTML = `
-    <a class="backlink" id="backToDash">&larr; Back to dashboard</a>
-    <h1>Results${round > 1 ? ` &mdash; retake round ${round - 1}` : ''}</h1>
-    ${round > 1 && missed.length === 0 ? `<div class="retake-banner" role="status"><strong>Every one right.</strong> You have now answered every question you missed on your original quiz correctly.</div>` : ''}
-    <div class="card" style="text-align:center">
-      <div class="score-big">${score}<span style="font-size:24px;color:var(--muted)"> / 100</span></div>
-      <div class="score-sub">${correctCount} correct out of ${answeredCount} answered (${total} selected)</div>
+    <div class="quiz-grid">
+      <div class="main-col">
+        <a class="backlink" id="backToDash">&larr; Back to dashboard</a>
+        <h1>Results${what}</h1>
+        ${round > 1 && missed.length === 0 ? `<div class="retake-banner" role="status"><strong>Every one right.</strong> You have now answered every question you missed on your original quiz correctly.</div>` : ''}
+        ${round === 1 && session.kind === 'missed' && missed.length === 0 && missedList().length === 0 ? `<div class="retake-banner" role="status"><strong>Every one right.</strong> Your Missed list is empty.</div>` : ''}
+        <div class="card" style="text-align:center">
+          <div class="score-big">${score}<span style="font-size:24px;color:var(--muted)"> / 100</span></div>
+          <div class="score-sub">${correctCount} correct out of ${answeredCount} answered (${total} selected)</div>
+        </div>
+        <div class="row results-actions">
+          ${missed.length ? `<button id="retakeBtn">Retake the ${missed.length} I missed</button>` : ''}
+          <button id="newQuizBtn" ${missed.length ? 'class="ghost"' : ''}>Start New Quiz</button>
+        </div>
+        ${missed.length ? `<div class="retake-note">Retake gives you only the questions you got wrong or didn&rsquo;t answer${shuffleOn() ? ', in a new order' : ''}. You can keep retaking until you&rsquo;ve got every one right.</div>` : ''}
+        <div style="height:14px"></div>
+        ${mapHtml(session, st, all, -1, true)}
+        <div class="card">
+          <h2>Review missed questions (${missed.length})</h2>
+          <div id="missedList">${missed.length===0 ? '<div class="note">Perfect score on answered questions.</div>' : ''}</div>
+        </div>
+      </div>
+      <aside class="side-col" aria-label="Your score and what to study">
+        ${scorePanel(session, st)}
+        ${studyPanel()}
+        ${panelButtons(session)}
+      </aside>
     </div>
-    <div class="card">
-      <h2>By objective</h2>
-      <div id="domainBreakdown"></div>
-    </div>
-    <div class="card">
-      <h2>Review missed questions (${missed.length})</h2>
-      <div id="missedList">${missed.length===0 ? '<div class="note">Perfect score on answered questions.</div>' : ''}</div>
-    </div>
-    <div class="row results-actions">
-      ${missed.length ? `<button id="retakeBtn">Retake the ${missed.length} I missed</button>` : ''}
-      <button id="newQuizBtn" ${missed.length ? 'class="ghost"' : ''}>Start New Quiz</button>
-    </div>
-    ${missed.length ? `<div class="retake-note">Retake gives you only the questions you got wrong or didn&rsquo;t answer, in a new order. You can keep retaking until you&rsquo;ve got every one right.</div>` : ''}
   `;
-  document.getElementById('backToDash').addEventListener('click', () => { clearSession(); renderDashboard(); });
-
-  const db = document.getElementById('domainBreakdown');
-  ALL_SUB_IDS.forEach(id => {
-    const s = perSub[id];
-    if(!s || s.total === 0) return;
-    const p = Math.round((s.correct/s.total)*100);
-    const row = document.createElement('div');
-    row.className = 'domain-score';
-    row.innerHTML = `<span>${id} &mdash; ${SUB_LABEL[id]}</span><span>${s.correct}/${s.total} (${p}%)</span>`;
-    db.appendChild(row);
-  });
 
   const ml = document.getElementById('missedList');
   missed.forEach(({q, chosenOrigIdx}) => {
     const div = document.createElement('div');
     div.className = 'review-item';
-    let yourAnswerHtml;
-    if(chosenOrigIdx === null){
-      yourAnswerHtml = `<div class="explain-box"><span class="tag bad">Not answered</span></div>`;
-    } else {
-      const specific = Array.isArray(q.wrongExplain) && q.wrongExplain[chosenOrigIdx];
-      yourAnswerHtml = `<div class="explain-box"><span class="tag bad">Your answer</span>${escapeHtml(q.choices[chosenOrigIdx])}${specific ? ' &mdash; ' + escapeHtml(specific) : ''}</div>`;
-    }
+    let yourAnswerHtml = chosenOrigIdx === null
+      ? `<div class="explain-box"><span class="tag bad">Not answered</span></div>`
+      : `<div class="explain-box"><span class="tag bad">Your answer</span>${escapeHtml(q.choices[chosenOrigIdx])}${Array.isArray(q.wrongExplain) && q.wrongExplain[chosenOrigIdx] ? ' &mdash; ' + escapeHtml(q.wrongExplain[chosenOrigIdx]) : ''}</div>`;
     div.innerHTML = `
       <span class="pill">${q.sub} &mdash; ${SUB_LABEL[q.sub] || q.domain}</span>
       <div class="review-q">${escapeHtml(q.q)}</div>
@@ -13513,13 +14002,42 @@ function renderResults(session){
     ml.appendChild(div);
   });
 
+  document.getElementById('backToDash').addEventListener('click', () => { clearSession(); renderDashboard(); });
   document.getElementById('newQuizBtn').addEventListener('click', () => {
     clearSession();
     renderDashboard();
   });
   const retakeBtn = document.getElementById('retakeBtn');
   if(retakeBtn) retakeBtn.addEventListener('click', () => startRetake(session, missedIds));
+  app.querySelectorAll('.qtile').forEach(b => b.addEventListener('click', () => {
+    session.current = parseInt(b.dataset.pos, 10);
+    saveSession(session);
+    renderQuiz(session, 'q');
+  }));
+  const det = document.getElementById('qmap');
+  det.addEventListener('toggle', () => { if(session.mapOpen !== det.open){ session.mapOpen = det.open; saveSession(session); } });
+  wirePanel(session);
 }
+
+function escapeHtml(s){
+  const d = document.createElement('div');
+  d.textContent = s == null ? '' : String(s);
+  return d.innerHTML;
+}
+
+// ---------- Easier reading: on stays on, across pages, visits and test banks ----------
+(function(){
+  const b = document.getElementById('easierBtn'), root = document.documentElement;
+  function paint(){ const on = root.classList.contains('easier'); b.setAttribute('aria-pressed', String(on)); b.textContent = 'Easier reading: ' + (on ? 'on' : 'off'); }
+  b.addEventListener('click', () => {
+    const on = !root.classList.contains('easier');
+    root.classList.toggle('easier', on);
+    try{ localStorage.setItem(EASIER_KEY, on ? '1' : '0'); }catch(e){}
+    paint();
+    fitParts();
+  });
+  paint();
+})();
 
 renderDashboard();
 </script>
