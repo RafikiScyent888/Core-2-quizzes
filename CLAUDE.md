@@ -35,13 +35,15 @@ Quick Quizzes. GitHub Pages serves `main`.
   11 new questions, `620`–`630`, reaching 20 plus the standing five extra
   scenarios.
 
-## Score card, question map and filters (31 October 2026, preview)
+## Score card, question map and filters (31 October 2026)
 
 Built to the owner's decisions in the doc "Test banks: score card, question
 map and filters (plan)" (https://claude.ai/artifact/6vcGwyvSsrwfHBWaKp6rq5),
 the same features the owner approved on Core 1, built on this page and its
-light look. It is on the branch `claude/student-resources-knowledge-base-vgvfni`
-and waits for the owner's approval before it goes to `main`.
+light look. The owner saw the preview (the 11 deep colours, a quiz, the
+filters, Reset, results, the dashboard, the Full Practice Exam screen, Easier
+reading, a phone) and approved it: "I like Core 2, push it." Live on `main`
+the same day. Still open: the CertMaster Learn address students use.
 - **Topic colours:** `TOPIC_COLOR`, the owner's rainbow in deep shades, because
   light colours vanish on this light page (previewed first, outside the royal
   six). White lettering on each is over 7:1. A colour always goes with the
