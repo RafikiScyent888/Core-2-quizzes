@@ -154,6 +154,8 @@ async function coreNew(correctPos) {
   const cp = await correctPos(); await page.locator('#choicesWrap .choice').nth((cp + 1) % 4).click();
   await page.click('.chip[data-filter="missed"]'); await sweep('missed-chip-on');
   await page.click('.seg'); await sweep('part-chosen');
+  // every part of the bar while the pointer rests on it (hover must keep the lettering at 7:1)
+  for (const f of await page.$$eval('.seg', ss => ss.map(s => s.dataset.filter))) { await page.hover(`.seg[data-filter="${f}"]`); await sweep('part-hover', { root: `.seg[data-filter="${f}"]` }); }
   await page.click('.chip[data-filter="all"]');
   await page.click('#resetBtn'); await sweep('dialog', { root: '#confirmDlg', full: false }); await page.click('#confirmNo');
   await page.click('#easierBtn'); await sweep('easier-question');
