@@ -13292,8 +13292,8 @@ const NEW_CHIP = "New for the updated objectives";
 // "Review in CertMaster Learn" opens CompTIA's CertMaster Learn sign-in until
 // the owner confirms the address their students use. No lesson numbers: the
 // lesson list for 220-1202 is not public, so none are guessed.
-const CERTMASTER_URL = "https://learn.comptia.org/login";
-const TOPIC_Q = 25;   // questions in a "Practise this topic" quiz
+const CERTMASTER_URL = "https://www.comptia.org/en-us/resources/certmaster-training/learn/";
+const TOPIC_Q = 25;   // questions in a "Practice this topic" quiz
 // Question ids are numbers; the Missed list stores them as text (object keys),
 // so both maps are keyed by the id as text.
 const BY_ID = new Map(QUESTION_BANK.map(q => [String(q.id), q]));
@@ -13483,7 +13483,7 @@ function studyPanel(){
   const items = list.map(t => `<li class="st-item" style="${tc(t.id)}">
       <div class="st-head">${dot(t.id)}<span class="st-name">${topicText(t.id)}</span><span class="st-n">${t.n} missed</span></div>
       <div class="st-links">
-        <button type="button" class="linkish" data-practise="${t.id}">Practise this topic<span class="sr"> (${topicText(t.id)})</span></button>
+        <button type="button" class="linkish" data-practise="${t.id}">Practice this topic<span class="sr"> (${topicText(t.id)})</span></button>
         <a class="linkish" href="${CERTMASTER_URL}" target="_blank" rel="noopener">Review in CertMaster Learn<span class="sr"> (${topicText(t.id)}; opens in a new tab)</span><span aria-hidden="true">&nbsp;&#8599;</span></a>
       </div>
     </li>`).join('');
@@ -13730,7 +13730,7 @@ function startMissedAll(){
   begin(ids, { kind: 'missed', domains: [...new Set(ids.map(id => questionById(id).sub))] });
 }
 
-// "Practise this topic": up to 25 of the topic's questions, every one of its
+// "Practice this topic": up to 25 of the topic's questions, every one of its
 // missed questions among them.
 function startTopic(sub){
   const missed = new Set(missedList().map(String));
@@ -13834,7 +13834,7 @@ function mapHtml(session, st, vis, cur, review){
 function bannerHtml(session){
   if((session.round || 1) > 1) return `<div class="retake-banner" role="note"><strong>Retake round ${session.round - 1}</strong> &mdash; only the questions you missed last time.</div>`;
   if(session.kind === 'missed') return `<div class="retake-banner" role="note"><strong>Your Missed list</strong> &mdash; every question you have answered wrong and not yet answered right. Each one you get right comes off the list.</div>`;
-  if(session.kind === 'topic') return `<div class="retake-banner" role="note"><strong>Practising ${topicText(session.topic)}</strong> &mdash; every question you have missed on this topic is included.</div>`;
+  if(session.kind === 'topic') return `<div class="retake-banner" role="note"><strong>Practicing ${topicText(session.topic)}</strong> &mdash; every question you have missed on this topic is included.</div>`;
   return '';
 }
 

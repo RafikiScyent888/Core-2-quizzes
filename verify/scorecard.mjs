@@ -1,5 +1,5 @@
 // Drives the score card, question map, filters, Shuffle order, the lasting
-// Missed list ("Study these first", "Retake all missed", "Practise this
+// Missed list ("Study these first", "Retake all missed", "Practice this
 // topic"), Reset and Easier reading (31 October 2026) in Chromium, the way a
 // student meets them, and checks:
 //   - the topic colours: one each, all different, white lettering over 7:1 on
@@ -14,7 +14,7 @@
 //     quiz; each topic's "n/t right" and its bar
 //   - the Missed list: a wrong answer goes on, a right answer comes off, in
 //     any quiz; "Study these first" lists its topics, most missed first;
-//     "Retake all missed" is exactly the list; "Practise this topic" draws
+//     "Retake all missed" is exactly the list; "Practice this topic" draws
 //     only from that topic and includes its missed questions
 //   - Reset asks first, clears this quiz only and keeps the Missed list
 //   - leaving a quiz part-way asks first; finishing with questions left asks
@@ -101,7 +101,10 @@ async function run(file) {
     ok(study.join(' | ') === '4.3 2 missed | 1.1 1 missed', `"Study these first" reads [${study.join(' | ')}], expected 4.3 (2) before 1.1 (1)`);
     ok((await text('#missedAllBtn')) === 'Retake all missed (3)', `setup's retake button reads "${await text('#missedAllBtn')}"`);
     const link = await page.$eval('.st-item a.linkish', a => [a.href, a.target]).catch(() => []);
-    ok(/^https:\/\/learn\.comptia\.org\//.test(link[0] || '') && link[1] === '_blank', `"Review in CertMaster Learn" goes to ${link[0]}`);
+    ok(link[0] === 'https://www.comptia.org/en-us/resources/certmaster-training/learn/' && link[1] === '_blank', `"Review in CertMaster Learn" goes to ${link[0]}`);
+    const ptext = await page.$eval('.st-item [data-practise]', b => b.childNodes[0].textContent.trim()).catch(() => '');
+    ok(ptext === 'Practice this topic', `the topic's link reads "${ptext}"`);
+    ok(!/Practis/i.test(await page.evaluate(() => document.body.innerText)), 'no British "Practise" anywhere on the page');
     await page.evaluate(k => localStorage.removeItem(k), MISSED); await page.reload();
 
     // ---- a known quiz: 6 from 1.3 (one of them new), 2 from 2.1, 2 from 4.1 ----
@@ -240,7 +243,7 @@ async function run(file) {
     ok(Object.keys(await missed()).length === 0, 'answering right did not take questions off the Missed list');
     ok(((await text('.retake-banner')) || '').startsWith('Every one right. Your Missed list is empty.'), `finish reads "${await text('.retake-banner')}"`);
 
-    // leaving part-way asks; practise a topic
+    // leaving part-way asks; practice a topic
     await page.click('#newQuizBtn'); await page.click('#quick10Tile');
     const wrongId = await answer(false), wsub = (await bank(wrongId)).sub; await page.click('#nextBtn');
     const started = (await session()).startedAt;
@@ -251,8 +254,9 @@ async function run(file) {
     await page.click(`[data-practise="${wsub}"]`); if (await dialogOpen()) await page.click('#confirmYes');
     const tp = await session(), tsubs = await page.evaluate(ids => ids.map(id => QUESTION_BANK.find(q => q.id === id).sub), tp.order.map(e => e.id));
     const nTopic = await page.evaluate(s => QUESTION_BANK.filter(q => q.sub === s).length, wsub);
-    ok(tp.kind === 'topic' && tp.topic === wsub && tsubs.every(s => s === wsub), `"Practise this topic" (${wsub}) drew [${[...new Set(tsubs)]}]`);
-    ok(tp.order.length === Math.min(25, nTopic) && tp.order.some(e => e.id === wrongId), `"Practise this topic" has ${tp.order.length} questions${tp.order.some(e => e.id === wrongId) ? '' : ', without the missed one'}`);
+    ok(tp.kind === 'topic' && tp.topic === wsub && tsubs.every(s => s === wsub), `"Practice this topic" (${wsub}) drew [${[...new Set(tsubs)]}]`);
+    ok(tp.order.length === Math.min(25, nTopic) && tp.order.some(e => e.id === wrongId), `"Practice this topic" has ${tp.order.length} questions${tp.order.some(e => e.id === wrongId) ? '' : ', without the missed one'}`);
+    { const body = await page.evaluate(() => document.body.innerText); ok(/Practicing /.test(body) && !/Practis/i.test(body), 'the topic quiz says "Practicing", with no British spelling on it'); }
 
     // shuffle off from setup, remembered
     await page.click('#pauseBtn'); await page.click('#discardBtn');
@@ -329,6 +333,9 @@ async function run(file) {
 if (process.argv.includes('--plant')) {
   const src = fs.readFileSync(path.join(HERE, '..', 'index.html'), 'utf8');
   const PLANTS = {
+    'British spelling back on the link': ['">Practice this topic<span', '">Practise this topic<span'],
+    'British spelling back on the banner': ['<strong>Practicing ', '<strong>Practising '],
+    'the old CertMaster address': ['const CERTMASTER_URL = "https://www.comptia.org/en-us/resources/certmaster-training/learn/";', 'const CERTMASTER_URL = "https://learn.comptia.org/login";'],
     'wrong answer not saved': ["else m[id] = { n: ((m[id] && m[id].n) || 0) + 1, at: new Date().toISOString() };", "else {}"],
     'right answer left on the list': ['if(right) delete m[id];', 'if(right) {}'],
     'wrong square has no cross': [`s === 'wrong' ? '<span class="mk" aria-hidden="true">&#10007;</span>'`, `s === 'wrong' ? ''`],
@@ -349,7 +356,7 @@ if (process.argv.includes('--plant')) {
     'Shuffle order off ignored': ['const list = mix ? shuffle(ids) :', 'const list = true ? shuffle(ids) :'],
     'shuffle part-way loses answers': ['session.answers = order.map(e => { const o = chosen.get(e.id); return o === null ? null : e.displayOrder.indexOf(o); });', 'session.answers = order.map(() => null);'],
     'retake all uses this quiz': ['  const ids = missedList();\n  if(!ids.length) return;', '  const ids = (loadSession() || { order: [] }).order.map(e => e.id);\n  if(!ids.length) return;'],
-    'practise draws from every topic': ['const all = QUESTION_BANK.filter(q => q.sub === sub).map(q => q.id);', 'const all = QUESTION_BANK.map(q => q.id);'],
+    'practice draws from every topic': ['const all = QUESTION_BANK.filter(q => q.sub === sub).map(q => q.id);', 'const all = QUESTION_BANK.map(q => q.id);'],
     'no keyboard answers': ["if(e.key === 'Enter' || e.key === ' ')", 'if(false)'],
     'easier reading forgotten': ["try{ localStorage.setItem(EASIER_KEY, on ? '1' : '0'); }catch(e){}", ''],
     'theme ignores the device': ['t = (window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches) ? "dark" : "light";', 't = "light";'],
@@ -364,7 +371,9 @@ if (process.argv.includes('--plant')) {
   };
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'scorecard-plant-'));
   let missedN = 0;
+  const only = (process.argv.find((x) => x.startsWith('--only=')) || '').slice(7);   /* --only=<name>: just that plant */
   for (const [name, [a, b]] of Object.entries(PLANTS)) {
+    if (only && name !== only) continue;
     if (src.split(a).length !== 2) { console.log(`STALE  ${name}: its target text is not in index.html exactly once`); missedN++; continue; }
     fs.writeFileSync(path.join(tmp, 'index.html'), src.replace(a, () => b));
     const f = await run(path.join(tmp, 'index.html'));
@@ -377,5 +386,5 @@ if (process.argv.includes('--plant')) {
 } else {
   const fails = await run(process.argv[2] || path.join(HERE, '..', 'index.html'));
   if (fails.length) { console.log('FAIL ' + fails.length); fails.forEach(f => console.log('  - ' + f)); process.exit(1); }
-  console.log('PASS — topic colours, parts bar, chips, map, score card, Missed list (Study these first, Retake all missed, Practise this topic), Reset, leave and finish prompts, Shuffle order, review, Easier reading, light or dark (follows the device until chosen, the choice kept for the program), keyboard answers, no script errors');
+  console.log('PASS — topic colours, parts bar, chips, map, score card, Missed list (Study these first, Retake all missed, Practice this topic), Reset, leave and finish prompts, Shuffle order, review, Easier reading, light or dark (follows the device until chosen, the choice kept for the program), keyboard answers, no script errors');
 }

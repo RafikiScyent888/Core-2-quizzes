@@ -43,7 +43,8 @@ the same features the owner approved on Core 1, built on this page and its
 light look. The owner saw the preview (the 11 deep colours, a quiz, the
 filters, Reset, results, the dashboard, the Full Practice Exam screen, Easier
 reading, a phone) and approved it: "I like Core 2, push it." Live on `main`
-the same day. Still open: the CertMaster Learn address students use.
+the same day. (The CertMaster Learn address, the one thing left open, was settled
+7 November 2026.)
 - **Topic colours:** `TOPIC_COLOR`, the owner's rainbow in deep shades, because
   light colours vanish on this light page (previewed first, outside the royal
   six). White lettering on each is over 7:1. A colour always goes with the
@@ -60,8 +61,14 @@ the same day. Still open: the CertMaster Learn address students use.
 - **Keys:** `core2_missed_v1` (`{id: {n, at}}`; ids are numbers, stored as
   text, looked up as text), `core2_shuffle_v1`, and `cwp-easier-reading`,
   shared with the other test banks.
-- **CertMaster Learn:** `CERTMASTER_URL` is CompTIA's sign-in page
-  (learn.comptia.org/login) until the owner confirms the address students use.
+- **CertMaster Learn:** `CERTMASTER_URL` is the address the owner gave on 7 November 2026,
+  https://www.comptia.org/en-us/resources/certmaster-training/learn/ (the owner: "needs to be the
+  hyperlink for Review in CertMaster Learn across all of the quizzes"). It replaced CompTIA's sign-in
+  page; `verify/scorecard.mjs` checks the link is exactly this address.
+- **"Practice this topic" (7 November 2026):** the owner: "Please fix the to 'Practice this topic' across
+  all of the quizzes." The link, the topic quiz's banner ("Practicing ...") and its title use the American
+  spelling; `verify/scorecard.mjs` checks the link's words and that no "Practis" is left on the page. The
+  internal attribute `data-practise` keeps its name: students never see it.
 - Reset, leaving a quiz part-way, and finishing with questions left all ask
   first. Answers can be chosen with the keyboard.
 
